@@ -1,11 +1,12 @@
 {
-  "name": "app-backend",
+  "name": "one-plate",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node build/server.js",
+    "migrate": "npx prisma migrate dev",
     "test": "vitest run --dir src/use-cases",
     "test:watch": "vitest --dir src/use-cases",
     "test:ui": "vitest --ui"
