@@ -1,22 +1,58 @@
-import { ConflictError } from '@/errors/index.ts'
 import type { IRecipeRepository } from '@/interfaces/index.ts'
-import type { RecipeCreateParams } from '@/types/index.ts'
 
 type Request = {
-  recipeDto: RecipeCreateParams
+  title?: string
+  category?: string
+  authorId?: string
+  kcal?: number
+  timeToPrepare?: string
+  portionsMin?: number
+  portionsMax?: number
+  page: number
 }
 
 export class CreateRecipeUseCase {
   constructor(private recipeRepository: IRecipeRepository) {}
 
-  async execute({ recipeDto }: Request) {
-    const existingRecipe = await this.recipeRepository.findByTitle(recipeDto.title)
-
-    if (existingRecipe) {
-      throw new ConflictError('Already exists a recipe with this title')
+  async execute({
+    title,
+    category,
+    authorId,
+    kcal,
+    timeToPrepare,
+    portionsMin,
+    portionsMax,
+    page,
+  }: Request) {
+    if (!title) {
+      throw new Error('Title is required');
     }
 
-    const recipe = await this.recipeRepository.create(recipeDto)
+    if (!authorId) {
+      throw new Error('AuthorId is required');
+    }
+
+    if (!category) {
+      throw new Error('Category is required');
+    }
+    // const existingRecipe = await this.recipeRepository.findByTitle(title)
+
+    // if (existingRecipe) {
+    //   throw new ConflictError('Already exists a recipe with this title')
+    // }
+    
+
+    const recipe = await this.recipeRepository.create({
+      title,
+      category,
+      authorId,
+      kcalMin,
+      kcalMax,
+      timeToPrepare,
+      portionsMin,
+      portionsMax,
+      page, 
+    })
 
     return { recipe }
   }
