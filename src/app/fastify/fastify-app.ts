@@ -1,5 +1,3 @@
-// import fastifyJwt from "@fastify/jwt";
-// import fastifyCookie from "@fastify/cookie";
 import { HTTP_STATUS_CODE, env } from '@/constants/index.ts'
 import {
   AppError,
@@ -29,19 +27,6 @@ export class FastifyApp implements IServerApp {
     this.registerCors()
     this.registerRoutes()
     this.setErrorHandler()
-
-    // app.register(fastifyJwt, {
-    //   secret: env.JWT_SECRET,
-    //   cookie: {
-    //     cookieName: 'refreshToken',
-    //     signed: false,
-    //   },
-    //   sign: {
-    //     expiresIn: '10m',
-    //   },
-    // })
-
-    // app.register(fastifyCookie)
   }
 
   async startServer() {
@@ -59,7 +44,7 @@ export class FastifyApp implements IServerApp {
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin: 'http://localhost:5173',
+      origin: env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : 'http://localhost:5173',
     })
   }
 
