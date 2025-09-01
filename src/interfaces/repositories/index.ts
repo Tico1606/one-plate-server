@@ -1,6 +1,6 @@
 export { IFavoriteRepository } from './favorite-repository.ts'
 export { IIngredientRepository } from './ingredient-repository.ts'
 export { IRecipeRepository } from './recipe-repository.ts'
-export { IShoppingCartRepository } from './shopping-cart-repository.ts'
+export { IShoppingCartRepository } from './shopping-list-repository.ts'
 export { IShoppingItemRepository } from './shopping-item-repository.ts'
 export { IUserRepository } from './user-repository.ts'

@@ -6,10 +6,10 @@ import type {
 import type { Recipe } from '@prisma/client'
 
 export interface IRecipeRepository {
-  findById(recipeId: string): Promise<Recipe | null>
-  findByTitle(title: string): Promise<Recipe | null>
+  findById(id: string): Promise<Recipe | null>
   findMany(params: RecipeFilterParams): Promise<Recipe[]>
+  findByAuthorId(authorId: string): Promise<Recipe[]>
   create(data: RecipeCreateParams): Promise<Recipe>
-  update(data: RecipeUpdateParams, recipeId: string): Promise<Recipe>
-  delete(recipeId: string): Promise<void>
+  update(id: string, data: RecipeUpdateParams): Promise<Recipe>
+  delete(id: string): Promise<void>
 }
