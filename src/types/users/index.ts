@@ -1,2 +1,1 @@
-export { UserFilterParams } from './user-filter-params.ts'
-export { UserUpdateParams } from './user-update-params.ts'
+export * from './user-params.js'
