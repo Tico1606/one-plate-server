@@ -1,5 +1,14 @@
 import type { Difficulty, RecipeStatus } from '@prisma/client'
 
+// Interface auxiliar para os dados de nutrição, evitando repetição.
+interface NutritionParam {
+  calories?: number
+  proteinGrams?: number
+  carbGrams?: number
+  fatGrams?: number
+}
+
+// Define o formato para um ingrediente quando aninhado na criação da receita
 interface NestedIngredientParam {
   ingredientId: string
   amount?: number
@@ -8,13 +17,16 @@ interface NestedIngredientParam {
   group?: string
 }
 
+// Define o formato para um passo quando aninhado na criação da receita
 interface NestedStepParam {
   order: number
   description: string
   durationSec?: number
 }
 
-export interface RecipeCreateParams {
+// Parâmetros necessários para CRIAR uma nova receita.
+// Note que inclui as relações (ingredientes, passos, etc.) que são criadas junto.
+export interface RecipeCreateParams extends NutritionParam {
   title: string
   description?: string
   authorId: string
@@ -24,13 +36,16 @@ export interface RecipeCreateParams {
   servings: number
   videoUrl?: string
   source?: string
-  nutrition?: any
+
+  // Relações que serão criadas junto com a receita
   ingredients: NestedIngredientParam[]
   steps: NestedStepParam[]
   categoryIds: string[]
 }
 
-export interface RecipeUpdateParams {
+// Parâmetros que podem ser enviados para ATUALIZAR uma receita existente.
+// Todos os campos são opcionais.
+export interface RecipeUpdateParams extends NutritionParam {
   title?: string
   description?: string
   difficulty?: Difficulty
@@ -39,11 +54,10 @@ export interface RecipeUpdateParams {
   servings?: number
   videoUrl?: string
   source?: string
-  nutrition?: any
   status?: RecipeStatus
-  moderationNotes?: string
 }
 
+// Parâmetros disponíveis para FILTRAR a busca de receitas.
 export interface RecipeFilterParams {
   title?: string
   authorId?: string
