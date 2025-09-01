@@ -74,9 +74,14 @@ model Recipe {
   prepMinutes Int
   cookMinutes Int
   servings    Int
-  nutrition   Json?
   videoUrl    String?
   source      String?
+
+  // Nutrição
+  calories     Int? // Calorias por porção
+  proteinGrams Float? // Proteína em gramas
+  carbGrams    Float? // Carboidratos em gramas
+  fatGrams     Float? // Gordura em gramas
 
   // Publicação Simplificada
   status      RecipeStatus @default(DRAFT)
@@ -84,7 +89,7 @@ model Recipe {
 
   // --- Relações de Conteúdo ---
   photos      RecipePhoto[]
-  steps       Step[]  
+  steps       Step[]
   categories  RecipeCategory[]
   ingredients RecipeIngredient[]
 
@@ -96,8 +101,9 @@ model Recipe {
   // --- Outras Relações ---
   shoppingListItems ShoppingListItem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  MealPlanEntry MealPlanEntry[]
 
   @@index([authorId])
   @@index([status, publishedAt])
