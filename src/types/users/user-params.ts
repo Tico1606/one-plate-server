@@ -1,20 +1,9 @@
-import type { Role } from '@prisma/client'
+import type {
+  CreateUserData,
+  ListUsersParams,
+  UpdateUserData,
+} from '@/interfaces/repositories/user-repository.ts'
 
-export interface UserCreateParams {
-  id: string
-  email: string
-  name?: string
-  photoUrl?: string
-}
-
-export interface UserUpdateParams {
-  name?: string
-  photoUrl?: string
-  role?: Role
-}
-
-export interface UserFilterParams {
-  name?: string
-  email?: string
-  role?: Role
-}
+export interface UserCreateParams extends CreateUserData {}
+export interface UserUpdateParams extends UpdateUserData {}
+export interface UserFilterParams extends ListUsersParams {}

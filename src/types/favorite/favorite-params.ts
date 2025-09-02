@@ -1,9 +1,7 @@
-export interface FavoriteCreateParams {
-  userId: string
-  recipeId: string
-}
+import type {
+  CreateFavoriteData,
+  ListFavoritesParams,
+} from '@/interfaces/repositories/favorite-repository.ts'
 
-export interface FavoriteFilterParams {
-  userId?: string
-  recipeId?: string
-}
+export interface FavoriteCreateParams extends CreateFavoriteData {}
+export interface FavoriteFilterParams extends ListFavoritesParams {}

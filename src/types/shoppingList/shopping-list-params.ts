@@ -1,24 +1,13 @@
-export interface ShoppingListCreateParams {
-  userId: string
-  title?: string
-}
+import type {
+  CreateShoppingListData,
+  CreateShoppingListItemData,
+  ListShoppingListsParams,
+  UpdateShoppingListData,
+  UpdateShoppingListItemData,
+} from '@/interfaces/repositories/shopping-list-repository.ts'
 
-export interface ShoppingListUpdateParams {
-  title?: string
-}
-
-export interface ShoppingListItemCreateParams {
-  ingredientId?: string
-  recipeId?: string
-  customText?: string
-  amount?: number
-  unit?: string
-  isChecked?: boolean
-}
-
-export interface ShoppingListItemUpdateParams {
-  customText?: string
-  amount?: number
-  unit?: string
-  isChecked?: boolean
-}
+export interface ShoppingListCreateParams extends CreateShoppingListData {}
+export interface ShoppingListUpdateParams extends UpdateShoppingListData {}
+export interface ShoppingListItemCreateParams extends CreateShoppingListItemData {}
+export interface ShoppingListItemUpdateParams extends UpdateShoppingListItemData {}
+export interface ShoppingListFilterParams extends ListShoppingListsParams {}
