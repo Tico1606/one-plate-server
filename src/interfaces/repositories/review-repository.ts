@@ -1,16 +1,39 @@
-import type {
-  ReviewFilterParams,
-  ReviewCreateParams,
-  ReviewUpdateParams,
-} from '@/types/review/index.ts'
-import type {} from '../../types/index.ts'
-import type { Review } from '@prisma/client'
+import type { BaseReview, ReviewWithRelations } from '@/types/base/index.ts'
 
-export interface IReviewRepository {
-  findById(id: string): Promise<Review | null>
-  findMany(params: ReviewFilterParams): Promise<Review[]>
-  getAverageRatingForRecipe(recipeId: string): Promise<number>
-  create(data: ReviewCreateParams): Promise<Review>
-  update(id: string, data: ReviewUpdateParams): Promise<Review>
+export interface ReviewRepository {
+  findById(id: string): Promise<BaseReview | null>
+  findByIdWithRelations(id: string): Promise<ReviewWithRelations | null>
+  findByRecipe(
+    recipeId: string,
+    params: ListReviewsParams,
+  ): Promise<{ reviews: ReviewWithRelations[]; total: number }>
+  findByUser(
+    userId: string,
+    params: ListReviewsParams,
+  ): Promise<{ reviews: ReviewWithRelations[]; total: number }>
+  findOneByUserAndRecipe(userId: string, recipeId: string): Promise<BaseReview | null>
+  create(data: CreateReviewData): Promise<BaseReview>
+  update(id: string, data: UpdateReviewData): Promise<BaseReview>
   delete(id: string): Promise<void>
+  getAverageRatingForRecipe(recipeId: string): Promise<number>
+  countByRecipe(recipeId: string): Promise<number>
+  incrementHelpfulCount(id: string): Promise<void>
+}
+
+export interface CreateReviewData {
+  recipeId: string
+  userId: string
+  rating: number
+  comment?: string | null
+}
+
+export interface UpdateReviewData {
+  rating?: number
+  comment?: string | null
+}
+
+export interface ListReviewsParams {
+  page: number
+  limit: number
+  sortBy?: 'newest' | 'oldest' | 'rating_high' | 'rating_low' | 'helpful'
 }

@@ -1,0 +1,6 @@
+export { PrismaRepository } from './prisma-repository.ts'
+export { PrismaUserRepository } from './user-repository.ts'
+export { PrismaRecipeRepository } from './recipe-repository.ts'
+export { PrismaFavoriteRepository } from './favorite-repository.ts'
+export { PrismaReviewRepository } from './review-repository.ts'
+export { PrismaShoppingListRepository } from './shopping-list-repository.ts'
