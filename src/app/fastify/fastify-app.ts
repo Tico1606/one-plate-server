@@ -44,12 +44,18 @@ export class FastifyApp implements IServerApp {
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin: env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : 'http://localhost:5173',
+      origin:
+        env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : 'http://localhost:5173',
     })
   }
 
   private registerRoutes() {
-    // this.app.register(Routes, { prefix: '/tasks' })
+    this.app.register(async (fastify) => {
+      const { recipesRoutes, usersRoutes } = await import('@/controllers/index.ts')
+
+      fastify.register(recipesRoutes, { prefix: '/api' })
+      fastify.register(usersRoutes, { prefix: '/api' })
+    })
   }
 
   private setErrorHandler() {
