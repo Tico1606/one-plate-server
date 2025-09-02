@@ -1,58 +1,49 @@
-import type { IRecipeRepository } from '@/interfaces/index.ts'
+import { ConflictError, ValidationError } from '@/errors/index.ts'
+import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
+import type { CreateRecipeData } from '@/interfaces/repositories/recipe-repository.ts'
+import type { BaseRecipe } from '@/types/base/index.ts'
 
-type Request = {
-  title?: string
-  category?: string
-  authorId?: string
-  kcal?: number
-  timeToPrepare?: string
-  portionsMin?: number
-  portionsMax?: number
-  page: number
+export interface CreateRecipeRequest extends CreateRecipeData {}
+
+export interface CreateRecipeResponse {
+  recipe: BaseRecipe
 }
 
 export class CreateRecipeUseCase {
-  constructor(private recipeRepository: IRecipeRepository) {}
+  constructor(private recipeRepository: RecipeRepository) {}
 
-  async execute({
-    title,
-    category,
-    authorId,
-    kcal,
-    timeToPrepare,
-    portionsMin,
-    portionsMax,
-    page,
-  }: Request) {
-    if (!title) {
-      throw new Error('Title is required');
+  async execute(request: CreateRecipeRequest): Promise<CreateRecipeResponse> {
+    // Validações básicas
+    if (!request.title?.trim()) {
+      throw new ValidationError('Título é obrigatório')
     }
 
-    if (!authorId) {
-      throw new Error('AuthorId is required');
+    if (!request.authorId) {
+      throw new ValidationError('ID do autor é obrigatório')
     }
 
-    if (!category) {
-      throw new Error('Category is required');
+    if (!request.steps || request.steps.length === 0) {
+      throw new ValidationError('Pelo menos um passo é obrigatório')
     }
-    // const existingRecipe = await this.recipeRepository.findByTitle(title)
 
-    // if (existingRecipe) {
-    //   throw new ConflictError('Already exists a recipe with this title')
-    // }
-    
+    if (!request.ingredients || request.ingredients.length === 0) {
+      throw new ValidationError('Pelo menos um ingrediente é obrigatório')
+    }
 
-    const recipe = await this.recipeRepository.create({
-      title,
-      category,
-      authorId,
-      kcalMin,
-      kcalMax,
-      timeToPrepare,
-      portionsMin,
-      portionsMax,
-      page, 
+    // Verificar se já existe uma receita com o mesmo título do mesmo autor
+    const existingRecipes = await this.recipeRepository.list({
+      page: 1,
+      limit: 1,
+      search: request.title,
+      authorId: request.authorId,
     })
+
+    if (existingRecipes.recipes.length > 0) {
+      throw new ConflictError('Já existe uma receita com este título')
+    }
+
+    // Criar a receita
+    const recipe = await this.recipeRepository.create(request)
 
     return { recipe }
   }

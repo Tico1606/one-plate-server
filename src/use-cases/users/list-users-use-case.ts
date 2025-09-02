@@ -1,16 +1,28 @@
-import type { IUserRepository } from '@/interfaces/index.ts'
+import type { UserRepository } from '@/interfaces/repositories/index.ts'
+import type { ListUsersParams } from '@/interfaces/repositories/user-repository.ts'
+import type { BaseUser } from '@/types/base/index.ts'
 
-type Request = {
-  id?: string | undefined
-  email?: string | undefined
+export interface ListUsersRequest extends ListUsersParams {}
+
+export interface ListUsersResponse {
+  users: BaseUser[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
 }
 
 export class ListUsersUseCase {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute({ id, email }: Request) {
-    const users = await this.userRepository.findMany({ id, email })
+  async execute(request: ListUsersRequest): Promise<ListUsersResponse> {
+    const result = await this.userRepository.list(request)
 
-    return { users }
+    return {
+      ...result,
+      page: request.page,
+      limit: request.limit,
+      totalPages: Math.ceil(result.total / request.limit),
+    }
   }
 }
