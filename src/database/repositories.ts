@@ -1,0 +1,15 @@
+import { prisma } from './prisma/prisma-client.ts'
+import {
+  PrismaFavoriteRepository,
+  PrismaRecipeRepository,
+  PrismaReviewRepository,
+  PrismaShoppingListRepository,
+  PrismaUserRepository,
+} from './prisma/repositories/index.ts'
+
+// Instâncias dos repositórios
+export const userRepository = new PrismaUserRepository(prisma)
+export const recipeRepository = new PrismaRecipeRepository(prisma)
+export const favoriteRepository = new PrismaFavoriteRepository(prisma)
+export const reviewRepository = new PrismaReviewRepository(prisma)
+export const shoppingListRepository = new PrismaShoppingListRepository(prisma)
