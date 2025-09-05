@@ -25,6 +25,7 @@
   "dependencies": {
     "@fastify/cors": "11.0.1",
     "@prisma/client": "6.10.1",
+    "@supabase/supabase-js": "2.57.0",
     "dayjs": "1.11.13",
     "dotenv": "16.6.0",
     "fastify": "5.4.0",
