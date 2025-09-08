@@ -1,6 +1,7 @@
-import { NotAllowedError } from '@/errors/index.ts'
-import { validateSupabaseToken } from '@/services/supabase-auth.ts'
+import { getAuth } from '@clerk/fastify'
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { NotAllowedError } from '@/errors/index.ts'
+import { getClerkUser } from '@/services/clerk-auth.ts'
 
 export interface AuthenticatedUser {
   id: string
@@ -15,44 +16,34 @@ declare module 'fastify' {
 }
 
 /**
- * Middleware que valida o token JWT do Supabase
+ * Middleware que valida a autenticação via Clerk
  * O frontend envia o token no header Authorization: Bearer <token>
  */
 export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
-  const authHeader = request.headers.authorization
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new NotAllowedError('Token de autenticação não fornecido')
-  }
-
-  const token = authHeader.substring(7)
-
   try {
-    const user = await validateSupabaseToken(token)
+    const user = await getClerkUser(request)
     request.user = user
   } catch (error) {
-    throw new NotAllowedError('Token inválido ou expirado')
+    throw new NotAllowedError('Usuário não autenticado ou token inválido')
   }
 }
 
 /**
- * Middleware opcional que valida o token se fornecido
+ * Middleware opcional que valida a autenticação se fornecida
  * Usado para rotas que funcionam com ou sem usuário autenticado
  */
 export async function optionalAuthMiddleware(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
-  const authHeader = request.headers.authorization
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return // Continua sem usuário autenticado
-  }
-
-  const token = authHeader.substring(7)
-
   try {
-    const user = await validateSupabaseToken(token)
+    const { userId } = getAuth(request)
+
+    if (!userId) {
+      return // Continua sem usuário autenticado
+    }
+
+    const user = await getClerkUser(request)
     request.user = user
   } catch (error) {
     // Ignora erro para middleware opcional

@@ -1,5 +1,5 @@
 import { userRepository } from '@/database/repositories.ts'
-import { authMiddleware } from '@/middleware/auth.ts'
+import { getAuthMiddleware } from '@/middleware/dev-auth.ts'
 import { adminOnlyMiddleware, adminOrOwnerMiddleware } from '@/middleware/role.ts'
 import {
   DeleteUserUseCase,
@@ -31,7 +31,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
       schema: {
         querystring: listUsersSchema,
       },
-      preHandler: [authMiddleware, adminOnlyMiddleware],
+      preHandler: [getAuthMiddleware(), adminOnlyMiddleware],
     },
     async (request, reply) => {
       const useCase = new ListUsersUseCase(userRepository)
@@ -50,7 +50,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [authMiddleware, adminOrOwnerMiddleware],
+      preHandler: [getAuthMiddleware(), adminOrOwnerMiddleware],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
@@ -68,7 +68,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
       schema: {
         body: updateUserSchema,
       },
-      preHandler: [authMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new UpdateUserProfileUseCase(userRepository)
@@ -91,7 +91,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/users/me',
     {
-      preHandler: [authMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new GetUserByIdUseCase(userRepository)
@@ -114,7 +114,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [authMiddleware, adminOnlyMiddleware],
+      preHandler: [getAuthMiddleware(), adminOnlyMiddleware],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }

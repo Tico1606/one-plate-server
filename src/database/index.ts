@@ -1,3 +1,2 @@
-import { PrismaTaskRepository } from './prisma/repositories/index.ts'
-
-export const taskRepository = new PrismaTaskRepository()
+// Este arquivo pode ser usado para exportar repositórios se necessário
+// Por enquanto, os repositórios são exportados diretamente de repositories.ts

@@ -1,5 +1,5 @@
 import { recipeRepository } from '@/database/repositories.ts'
-import { authMiddleware, optionalAuthMiddleware } from '@/middleware/auth.ts'
+import { getAuthMiddleware, getOptionalAuthMiddleware } from '@/middleware/dev-auth.ts'
 import {
   CreateRecipeUseCase,
   DeleteRecipeUseCase,
@@ -75,7 +75,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
       schema: {
         querystring: listRecipesSchema,
       },
-      preHandler: [optionalAuthMiddleware],
+      preHandler: [getOptionalAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new ListRecipesUseCase(recipeRepository)
@@ -97,7 +97,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [optionalAuthMiddleware],
+      preHandler: [getOptionalAuthMiddleware()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
@@ -118,7 +118,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
       schema: {
         body: createRecipeSchema,
       },
-      preHandler: [authMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new CreateRecipeUseCase(recipeRepository)
@@ -145,7 +145,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
         }),
         body: updateRecipeSchema,
       },
-      preHandler: [authMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
@@ -174,7 +174,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [authMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
