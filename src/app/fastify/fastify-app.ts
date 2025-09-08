@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from '@/errors/index.ts'
 import type { IServerApp } from '@/interfaces/index.ts'
+import { clerkPlugin } from '@clerk/fastify'
 import fastifyCors from '@fastify/cors'
 import fastify, { type FastifyInstance } from 'fastify'
 import {
@@ -24,6 +25,7 @@ export class FastifyApp implements IServerApp {
     this.app.setSerializerCompiler(serializerCompiler)
     this.app.setValidatorCompiler(validatorCompiler)
 
+    this.registerClerk()
     this.registerCors()
     this.registerRoutes()
     this.setErrorHandler()
@@ -41,6 +43,10 @@ export class FastifyApp implements IServerApp {
   }
 
   stopServer() {}
+
+  private registerClerk() {
+    this.app.register(clerkPlugin)
+  }
 
   private registerCors() {
     this.app.register(fastifyCors, {
