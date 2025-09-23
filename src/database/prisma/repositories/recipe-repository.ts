@@ -5,7 +5,6 @@ import type {
   UpdateRecipeData,
 } from '@/interfaces/repositories/recipe-repository.ts'
 import type { BaseRecipe, RecipeWithRelations } from '@/types/base/index.ts'
-import type { PrismaClient } from '@prisma/client'
 import { PrismaRepository } from './prisma-repository.ts'
 
 export class PrismaRecipeRepository extends PrismaRepository implements RecipeRepository {
@@ -237,8 +236,18 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
   async list(
     params: ListRecipesParams,
   ): Promise<{ recipes: BaseRecipe[]; total: number }> {
-    const { page, limit, search, category, difficulty, maxPrepTime, authorId, status } =
-      params
+    const {
+      page,
+      limit,
+      search,
+      category,
+      difficulty,
+      maxPrepTime,
+      authorId,
+      status,
+      sortBy,
+      sortOrder,
+    } = params
     const skip = (page - 1) * limit
 
     const where: any = {}
@@ -276,12 +285,20 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       where.status = status
     }
 
+    // Configurar ordenação
+    const orderBy: any = {}
+    if (sortBy) {
+      orderBy[sortBy] = sortOrder || 'desc'
+    } else {
+      orderBy.createdAt = 'desc' // Padrão
+    }
+
     const [recipes, total] = await Promise.all([
       this.prisma.recipe.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.recipe.count({ where }),
     ])
@@ -293,8 +310,18 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
     params: ListRecipesParams,
     userId?: string,
   ): Promise<{ recipes: RecipeWithRelations[]; total: number }> {
-    const { page, limit, search, category, difficulty, maxPrepTime, authorId, status } =
-      params
+    const {
+      page,
+      limit,
+      search,
+      category,
+      difficulty,
+      maxPrepTime,
+      authorId,
+      status,
+      sortBy,
+      sortOrder,
+    } = params
     const skip = (page - 1) * limit
 
     const where: any = {}
@@ -332,12 +359,20 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       where.status = status
     }
 
+    // Configurar ordenação
+    const orderBy: any = {}
+    if (sortBy) {
+      orderBy[sortBy] = sortOrder || 'desc'
+    } else {
+      orderBy.createdAt = 'desc' // Padrão
+    }
+
     const [recipes, total] = await Promise.all([
       this.prisma.recipe.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           author: true,
           photos: {

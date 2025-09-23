@@ -1,5 +1,5 @@
-import { DatabaseError } from '@/errors/index.ts'
 import { Prisma } from '@prisma/client'
+import { DatabaseError } from '@/errors/index.ts'
 
 export class PrismaError {
   constructor(error: unknown) {

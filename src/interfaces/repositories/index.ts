@@ -1,3 +1,4 @@
+export { CategoryRepository } from './category-repository.ts'
 export { FavoriteRepository } from './favorite-repository.ts'
 export { RecipeRepository } from './recipe-repository.ts'
 export { ReviewRepository } from './review-repository.ts'

@@ -98,4 +98,6 @@ export interface ListRecipesParams {
   featured?: boolean
   authorId?: string
   status?: 'DRAFT' | 'PUBLISHED'
+  sortBy?: 'createdAt' | 'title' | 'prepMinutes' | 'cookMinutes' | 'calories'
+  sortOrder?: 'asc' | 'desc'
 }
