@@ -1,4 +1,13 @@
-import { HTTP_STATUS_CODE, env } from '@/constants/index.ts'
+import { clerkPlugin } from '@clerk/fastify'
+import fastifyCors from '@fastify/cors'
+import fastify, { type FastifyInstance } from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+  type ZodTypeProvider,
+} from 'fastify-type-provider-zod'
+import { ZodError } from 'zod'
+import { env, HTTP_STATUS_CODE } from '@/constants/index.ts'
 import {
   AppError,
   ConflictError,
@@ -7,15 +16,6 @@ import {
   ValidationError,
 } from '@/errors/index.ts'
 import type { IServerApp } from '@/interfaces/index.ts'
-import { clerkPlugin } from '@clerk/fastify'
-import fastifyCors from '@fastify/cors'
-import fastify, { type FastifyInstance } from 'fastify'
-import {
-  type ZodTypeProvider,
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod'
-import { ZodError } from 'zod'
 
 export class FastifyApp implements IServerApp {
   private readonly app: FastifyInstance
@@ -45,20 +45,25 @@ export class FastifyApp implements IServerApp {
   stopServer() {}
 
   private registerClerk() {
-    this.app.register(clerkPlugin)
+    this.app.register(clerkPlugin, {
+      publishableKey: env.CLERK_PUBLISHABLE_KEY,
+      secretKey: env.CLERK_SECRET_KEY,
+    })
   }
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin:
-        env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : 'http://localhost:5173',
+      origin: env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : '*',
     })
   }
 
   private registerRoutes() {
     this.app.register(async (fastify) => {
-      const { recipesRoutes, usersRoutes } = await import('@/controllers/index.ts')
+      const { categoriesRoutes, recipesRoutes, usersRoutes } = await import(
+        '@/controllers/index.ts'
+      )
 
+      fastify.register(categoriesRoutes, { prefix: '/api' })
       fastify.register(recipesRoutes, { prefix: '/api' })
       fastify.register(usersRoutes, { prefix: '/api' })
     })
