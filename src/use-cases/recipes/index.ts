@@ -1,5 +1,5 @@
 export { CreateRecipeUseCase } from './create-recipe-use-case.ts'
+export { DeleteRecipeUseCase } from './delete-recipe-use-case.ts'
 export { GetRecipeByIdUseCase } from './get-recipe-by-id-use-case.ts'
 export { ListRecipesUseCase } from './list-recipes-use-case.ts'
 export { UpdateRecipeUseCase } from './update-recipe-use-case.ts'
-export { DeleteRecipeUseCase } from './delete-recipe-use-case.ts'

@@ -1,3 +1,5 @@
+import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { recipeRepository } from '@/database/repositories.ts'
 import { getAuthMiddleware, getOptionalAuthMiddleware } from '@/middleware/dev-auth.ts'
 import {
@@ -7,8 +9,6 @@ import {
   ListRecipesUseCase,
   UpdateRecipeUseCase,
 } from '@/use-cases/recipes/index.ts'
-import type { FastifyInstance } from 'fastify'
-import { z } from 'zod'
 
 // Schemas de validação
 const createRecipeSchema = z.object({
@@ -65,6 +65,10 @@ const listRecipesSchema = z.object({
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
   maxPrepTime: z.coerce.number().int().min(0).optional(),
   featured: z.coerce.boolean().optional(),
+  sortBy: z
+    .enum(['createdAt', 'title', 'prepMinutes', 'cookMinutes', 'calories'])
+    .optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 })
 
 export async function recipesRoutes(fastify: FastifyInstance) {
