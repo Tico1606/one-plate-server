@@ -17,7 +17,6 @@ export interface ReviewRepository {
   delete(id: string): Promise<void>
   getAverageRatingForRecipe(recipeId: string): Promise<number>
   countByRecipe(recipeId: string): Promise<number>
-  incrementHelpfulCount(id: string): Promise<void>
 }
 
 export interface CreateReviewData {

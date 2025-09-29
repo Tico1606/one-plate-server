@@ -26,8 +26,7 @@ export interface CreateRecipeData {
   description?: string | null
   authorId: string
   difficulty: 'EASY' | 'MEDIUM' | 'HARD'
-  prepMinutes: number
-  cookMinutes: number
+  prepTime: number
   servings: number
   videoUrl?: string | null
   source?: string | null
@@ -59,8 +58,7 @@ export interface UpdateRecipeData {
   title?: string
   description?: string | null
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD'
-  prepMinutes?: number
-  cookMinutes?: number
+  prepTime?: number
   servings?: number
   videoUrl?: string | null
   source?: string | null
@@ -93,11 +91,21 @@ export interface ListRecipesParams {
   limit: number
   search?: string
   category?: string
+  ingredient?: string
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD'
-  maxPrepTime?: number
+  prepTime?: number
+  servings?: number
   featured?: boolean
   authorId?: string
   status?: 'DRAFT' | 'PUBLISHED'
-  sortBy?: 'createdAt' | 'title' | 'prepMinutes' | 'cookMinutes' | 'calories'
+  sortBy?:
+    | 'createdAt'
+    | 'title'
+    | 'prepTime'
+    | 'calories'
+    | 'favorites'
+    | 'averageRating'
+    | 'servings'
+    | 'difficulty'
   sortOrder?: 'asc' | 'desc'
 }
