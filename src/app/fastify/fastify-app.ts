@@ -53,19 +53,25 @@ export class FastifyApp implements IServerApp {
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin: env.NODE_ENV === 'production' ? env.FRONTEND_DOMAIN : '*',
+      origin: env.NODE_ENV === 'test' ? env.FRONTEND_DOMAIN : '*',
     })
   }
 
   private registerRoutes() {
     this.app.register(async (fastify) => {
-      const { categoriesRoutes, recipesRoutes, usersRoutes } = await import(
-        '@/controllers/index.ts'
-      )
+      const {
+        categoriesRoutes,
+        ingredientsRoutes,
+        recipesRoutes,
+        usersRoutes,
+        reviewsRoutes,
+      } = await import('@/controllers/index.ts')
 
       fastify.register(categoriesRoutes, { prefix: '/api' })
+      fastify.register(ingredientsRoutes, { prefix: '/api' })
       fastify.register(recipesRoutes, { prefix: '/api' })
       fastify.register(usersRoutes, { prefix: '/api' })
+      fastify.register(reviewsRoutes, { prefix: '/api' })
     })
   }
 
@@ -79,7 +85,7 @@ export class FastifyApp implements IServerApp {
       }
 
       if (error instanceof AppError) {
-        if (env.NODE_ENV !== 'production') {
+        if (env.NODE_ENV !== 'prod') {
           console.error('Error title:', error.title)
           console.error('Error message:', error.message)
         }
@@ -108,7 +114,7 @@ export class FastifyApp implements IServerApp {
         return reply.status(HTTP_STATUS_CODE.serverError).send(response)
       }
 
-      if (env.NODE_ENV !== 'production') {
+      if (env.NODE_ENV !== 'prod') {
         console.error(error)
       }
 

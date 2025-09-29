@@ -1,3 +1,5 @@
 export { categoriesRoutes } from './categories-routes.ts'
+export { ingredientsRoutes } from './ingredients-routes.ts'
 export { recipesRoutes } from './recipes-routes.ts'
+export { reviewsRoutes } from './reviews-routes.ts'
 export { usersRoutes } from './users-routes.ts'

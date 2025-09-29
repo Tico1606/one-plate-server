@@ -15,8 +15,7 @@ const createRecipeSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
-  prepMinutes: z.number().int().min(0),
-  cookMinutes: z.number().int().min(0),
+  prepTime: z.number().int().min(0),
   servings: z.number().int().min(1),
   videoUrl: z.string().url().optional(),
   source: z.string().optional(),
@@ -28,16 +27,16 @@ const createRecipeSchema = z.object({
     .array(
       z.object({
         url: z.string().url(),
-        order: z.number().int().min(0).default(0),
+        order: z.coerce.number().int().min(0).default(0),
       }),
     )
     .default([]),
   steps: z
     .array(
       z.object({
-        order: z.number().int().min(0),
+        order: z.coerce.number().int().min(0),
         description: z.string().min(1, 'Descrição do passo é obrigatória'),
-        durationSec: z.number().int().min(0).optional(),
+        durationSec: z.coerce.number().int().min(0).optional(),
       }),
     )
     .min(1, 'Pelo menos um passo é obrigatório'),
@@ -45,7 +44,7 @@ const createRecipeSchema = z.object({
     .array(
       z.object({
         ingredientId: z.string(),
-        amount: z.number().min(0).optional(),
+        amount: z.coerce.number().min(0).optional(),
         unit: z.string().optional(),
         note: z.string().optional(),
         group: z.string().optional(),
@@ -59,14 +58,25 @@ const updateRecipeSchema = createRecipeSchema.partial()
 
 const listRecipesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
   search: z.string().optional(),
   category: z.string().optional(),
+  ingredient: z.string().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
-  maxPrepTime: z.coerce.number().int().min(0).optional(),
+  prepTime: z.coerce.number().int().min(0).optional(),
+  servings: z.coerce.number().int().min(1).optional(),
   featured: z.coerce.boolean().optional(),
   sortBy: z
-    .enum(['createdAt', 'title', 'prepMinutes', 'cookMinutes', 'calories'])
+    .enum([
+      'createdAt',
+      'title',
+      'prepTime',
+      'calories',
+      'favorites',
+      'averageRating',
+      'servings',
+      'difficulty',
+    ])
     .optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 })
