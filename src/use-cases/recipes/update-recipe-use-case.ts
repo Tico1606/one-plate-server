@@ -1,7 +1,8 @@
 import { NotAllowedError, NotFoundError } from '@/errors/index.ts'
 import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
 import type { UpdateRecipeData } from '@/interfaces/repositories/recipe-repository.ts'
-import type { BaseRecipe } from '@/types/base/index.ts'
+import { toRecipeDTO } from '@/types/converters.ts'
+import type { RecipeDTO } from '@/types/dtos.ts'
 
 export interface UpdateRecipeRequest extends UpdateRecipeData {
   recipeId: string
@@ -10,7 +11,7 @@ export interface UpdateRecipeRequest extends UpdateRecipeData {
 }
 
 export interface UpdateRecipeResponse {
-  recipe: BaseRecipe
+  recipe: RecipeDTO
 }
 
 export class UpdateRecipeUseCase {
@@ -33,8 +34,17 @@ export class UpdateRecipeUseCase {
       throw new NotAllowedError('Você só pode editar suas próprias receitas')
     }
 
-    const updatedRecipe = await this.recipeRepository.update(recipeId, updateData)
+    await this.recipeRepository.update(recipeId, updateData)
 
-    return { recipe: updatedRecipe }
+    // Buscar a receita atualizada com todos os relacionamentos para converter para DTO
+    const recipeWithRelations = await this.recipeRepository.findByIdWithRelations(
+      recipeId,
+      requesterId,
+    )
+    if (!recipeWithRelations) {
+      throw new Error('Erro ao buscar receita atualizada')
+    }
+
+    return { recipe: toRecipeDTO(recipeWithRelations) }
   }
 }

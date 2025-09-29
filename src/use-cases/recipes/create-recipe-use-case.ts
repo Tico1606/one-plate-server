@@ -1,12 +1,13 @@
 import { ConflictError, ValidationError } from '@/errors/index.ts'
 import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
 import type { CreateRecipeData } from '@/interfaces/repositories/recipe-repository.ts'
-import type { BaseRecipe } from '@/types/base/index.ts'
+import { toRecipeDTO } from '@/types/converters.ts'
+import type { RecipeDTO } from '@/types/dtos.ts'
 
 export interface CreateRecipeRequest extends CreateRecipeData {}
 
 export interface CreateRecipeResponse {
-  recipe: BaseRecipe
+  recipe: RecipeDTO
 }
 
 export class CreateRecipeUseCase {
@@ -45,6 +46,15 @@ export class CreateRecipeUseCase {
     // Criar a receita
     const recipe = await this.recipeRepository.create(request)
 
-    return { recipe }
+    // Buscar a receita criada com todos os relacionamentos para converter para DTO
+    const createdRecipe = await this.recipeRepository.findByIdWithRelations(
+      recipe.id,
+      request.authorId,
+    )
+    if (!createdRecipe) {
+      throw new Error('Erro ao buscar receita criada')
+    }
+
+    return { recipe: toRecipeDTO(createdRecipe) }
   }
 }

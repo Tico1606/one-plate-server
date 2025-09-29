@@ -1,13 +1,14 @@
 import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
 import type { ListRecipesParams } from '@/interfaces/repositories/recipe-repository.ts'
-import type { RecipeWithRelations } from '@/types/base/index.ts'
+import { toRecipeListItemDTO } from '@/types/converters.ts'
+import type { RecipeListItemDTO } from '@/types/dtos.ts'
 
 export interface ListRecipesRequest extends ListRecipesParams {
   userId?: string
 }
 
 export interface ListRecipesResponse {
-  recipes: RecipeWithRelations[]
+  recipes: RecipeListItemDTO[]
   total: number
   page: number
   limit: number
@@ -24,7 +25,8 @@ export class ListRecipesUseCase {
     if (params.featured) {
       const result = await this.recipeRepository.findFeatured(params)
       return {
-        ...result,
+        recipes: result.recipes.map(toRecipeListItemDTO),
+        total: result.total,
         page: params.page,
         limit: params.limit,
         totalPages: Math.ceil(result.total / params.limit),
@@ -35,7 +37,8 @@ export class ListRecipesUseCase {
     const result = await this.recipeRepository.listWithRelations(params, userId)
 
     return {
-      ...result,
+      recipes: result.recipes.map(toRecipeListItemDTO),
+      total: result.total,
       page: params.page,
       limit: params.limit,
       totalPages: Math.ceil(result.total / params.limit),

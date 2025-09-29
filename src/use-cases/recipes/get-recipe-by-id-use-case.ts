@@ -1,6 +1,7 @@
 import { NotFoundError } from '@/errors/index.ts'
 import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
-import type { RecipeWithRelations } from '@/types/base/index.ts'
+import { toRecipeDTO } from '@/types/converters.ts'
+import type { RecipeDTO } from '@/types/dtos.ts'
 
 export interface GetRecipeByIdRequest {
   recipeId: string
@@ -8,7 +9,7 @@ export interface GetRecipeByIdRequest {
 }
 
 export interface GetRecipeByIdResponse {
-  recipe: RecipeWithRelations
+  recipe: RecipeDTO
 }
 
 export class GetRecipeByIdUseCase {
@@ -28,6 +29,6 @@ export class GetRecipeByIdUseCase {
       await this.recipeRepository.incrementView(recipeId, userId)
     }
 
-    return { recipe }
+    return { recipe: toRecipeDTO(recipe) }
   }
 }
