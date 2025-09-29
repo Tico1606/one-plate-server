@@ -2,6 +2,7 @@ import { prisma } from './prisma/prisma-client.ts'
 import {
   PrismaCategoryRepository,
   PrismaFavoriteRepository,
+  PrismaIngredientRepository,
   PrismaRecipeRepository,
   PrismaReviewRepository,
   PrismaShoppingListRepository,
@@ -15,3 +16,4 @@ export const categoryRepository = new PrismaCategoryRepository(prisma)
 export const favoriteRepository = new PrismaFavoriteRepository(prisma)
 export const reviewRepository = new PrismaReviewRepository(prisma)
 export const shoppingListRepository = new PrismaShoppingListRepository(prisma)
+export const ingredientRepository = new PrismaIngredientRepository(prisma)

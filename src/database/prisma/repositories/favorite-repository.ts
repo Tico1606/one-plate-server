@@ -1,10 +1,10 @@
+import type { PrismaClient } from '@prisma/client'
 import type {
   CreateFavoriteData,
   FavoriteRepository,
   ListFavoritesParams,
 } from '@/interfaces/repositories/favorite-repository.ts'
 import type { BaseFavorite, FavoriteWithRelations } from '@/types/base/index.ts'
-import type { PrismaClient } from '@prisma/client'
 import { PrismaRepository } from './prisma-repository.ts'
 
 export class PrismaFavoriteRepository

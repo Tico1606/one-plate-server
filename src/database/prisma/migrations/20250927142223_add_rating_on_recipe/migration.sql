@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Recipe" ADD COLUMN     "rating" INTEGER NOT NULL DEFAULT 5;

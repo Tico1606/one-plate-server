@@ -5,7 +5,6 @@ import type {
   UserRepository,
 } from '@/interfaces/repositories/user-repository.ts'
 import type { BaseUser, UserWithRelations } from '@/types/base/index.ts'
-import type { PrismaClient } from '@prisma/client'
 import { PrismaRepository } from './prisma-repository.ts'
 
 export class PrismaUserRepository extends PrismaRepository implements UserRepository {

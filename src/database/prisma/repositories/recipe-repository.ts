@@ -75,8 +75,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
         description: data.description,
         authorId: data.authorId,
         difficulty: data.difficulty,
-        prepMinutes: data.prepMinutes,
-        cookMinutes: data.cookMinutes,
+        prepTime: data.prepTime,
         servings: data.servings,
         videoUrl: data.videoUrl,
         source: data.source,
@@ -134,8 +133,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
             title: data.title,
             description: data.description,
             difficulty: data.difficulty,
-            prepMinutes: data.prepMinutes,
-            cookMinutes: data.cookMinutes,
+            prepTime: data.prepTime,
             servings: data.servings,
             videoUrl: data.videoUrl,
             source: data.source,
@@ -211,8 +209,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
         title: data.title,
         description: data.description,
         difficulty: data.difficulty,
-        prepMinutes: data.prepMinutes,
-        cookMinutes: data.cookMinutes,
+        prepTime: data.prepTime,
         servings: data.servings,
         videoUrl: data.videoUrl,
         source: data.source,
@@ -241,8 +238,10 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       limit,
       search,
       category,
+      ingredient,
       difficulty,
-      maxPrepTime,
+      prepTime,
+      servings,
       authorId,
       status,
       sortBy,
@@ -269,12 +268,26 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       }
     }
 
+    if (ingredient) {
+      where.ingredients = {
+        some: {
+          ingredient: {
+            name: { contains: ingredient, mode: 'insensitive' },
+          },
+        },
+      }
+    }
+
     if (difficulty) {
       where.difficulty = difficulty
     }
 
-    if (maxPrepTime) {
-      where.prepMinutes = { lte: maxPrepTime }
+    if (prepTime) {
+      where.prepTime = prepTime
+    }
+
+    if (servings) {
+      where.servings = servings
     }
 
     if (authorId) {
@@ -288,7 +301,11 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
     // Configurar ordenação
     const orderBy: any = {}
     if (sortBy) {
-      orderBy[sortBy] = sortOrder || 'desc'
+      if (sortBy === 'favorites') {
+        orderBy.favorites = { _count: sortOrder || 'desc' }
+      } else {
+        orderBy[sortBy] = sortOrder || 'desc'
+      }
     } else {
       orderBy.createdAt = 'desc' // Padrão
     }
@@ -315,8 +332,10 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       limit,
       search,
       category,
+      ingredient,
       difficulty,
-      maxPrepTime,
+      prepTime,
+      servings,
       authorId,
       status,
       sortBy,
@@ -343,12 +362,26 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       }
     }
 
+    if (ingredient) {
+      where.ingredients = {
+        some: {
+          ingredient: {
+            name: { contains: ingredient, mode: 'insensitive' },
+          },
+        },
+      }
+    }
+
     if (difficulty) {
       where.difficulty = difficulty
     }
 
-    if (maxPrepTime) {
-      where.prepMinutes = { lte: maxPrepTime }
+    if (prepTime) {
+      where.prepTime = prepTime
+    }
+
+    if (servings) {
+      where.servings = servings
     }
 
     if (authorId) {
@@ -362,7 +395,15 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
     // Configurar ordenação
     const orderBy: any = {}
     if (sortBy) {
-      orderBy[sortBy] = sortOrder || 'desc'
+      if (sortBy === 'favorites') {
+        orderBy.favorites = { _count: sortOrder || 'desc' }
+      } else if (sortBy === 'averageRating') {
+        // Para averageRating, ordenar por createdAt como fallback
+        // O rating será calculado depois e ordenado em memória
+        orderBy.createdAt = sortOrder || 'desc'
+      } else {
+        orderBy[sortBy] = sortOrder || 'desc'
+      }
     } else {
       orderBy.createdAt = 'desc' // Padrão
     }
@@ -418,7 +459,31 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       this.prisma.recipe.count({ where }),
     ])
 
-    return { recipes: recipes as RecipeWithRelations[], total }
+    // Calcular rating médio para cada receita
+    const recipesWithRating = await Promise.all(
+      recipes.map(async (recipe) => {
+        const averageRating = await this.prisma.review.aggregate({
+          where: { recipeId: recipe.id },
+          _avg: { rating: true },
+        })
+
+        return {
+          ...recipe,
+          averageRating: averageRating._avg.rating || 0,
+        }
+      }),
+    )
+
+    // Se a ordenação for por averageRating, ordenar em memória
+    if (sortBy === 'averageRating') {
+      recipesWithRating.sort((a, b) => {
+        const aRating = a.averageRating || 0
+        const bRating = b.averageRating || 0
+        return sortOrder === 'asc' ? aRating - bRating : bRating - aRating
+      })
+    }
+
+    return { recipes: recipesWithRating as RecipeWithRelations[], total }
   }
 
   async findByAuthor(
@@ -467,6 +532,8 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
               user: true,
             },
           },
+          favorites: false,
+          views: false,
           _count: {
             select: {
               reviews: true,
@@ -483,7 +550,22 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       }),
     ])
 
-    return { recipes: recipes as RecipeWithRelations[], total }
+    // Calcular rating médio para cada receita
+    const recipesWithRating = await Promise.all(
+      recipes.map(async (recipe) => {
+        const averageRating = await this.prisma.review.aggregate({
+          where: { recipeId: recipe.id },
+          _avg: { rating: true },
+        })
+
+        return {
+          ...recipe,
+          averageRating: averageRating._avg.rating || 0,
+        }
+      }),
+    )
+
+    return { recipes: recipesWithRating as unknown as RecipeWithRelations[], total }
   }
 
   async incrementView(recipeId: string, userId?: string): Promise<void> {

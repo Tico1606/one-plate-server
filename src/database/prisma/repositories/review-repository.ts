@@ -5,7 +5,6 @@ import type {
   UpdateReviewData,
 } from '@/interfaces/repositories/review-repository.ts'
 import type { BaseReview, ReviewWithRelations } from '@/types/base/index.ts'
-import type { PrismaClient } from '@prisma/client'
 import { PrismaRepository } from './prisma-repository.ts'
 
 export class PrismaReviewRepository extends PrismaRepository implements ReviewRepository {
@@ -145,17 +144,6 @@ export class PrismaReviewRepository extends PrismaRepository implements ReviewRe
     })
   }
 
-  async incrementHelpfulCount(id: string): Promise<void> {
-    await this.prisma.review.update({
-      where: { id },
-      data: {
-        helpfulCount: {
-          increment: 1,
-        },
-      },
-    })
-  }
-
   private getOrderBy(sortBy?: string) {
     switch (sortBy) {
       case 'newest':
@@ -167,7 +155,7 @@ export class PrismaReviewRepository extends PrismaRepository implements ReviewRe
       case 'rating_low':
         return { rating: 'asc' as const }
       case 'helpful':
-        return { helpfulCount: 'desc' as const }
+        return { createdAt: 'desc' as const }
       default:
         return { createdAt: 'desc' as const }
     }

@@ -1,3 +1,4 @@
+import type { PrismaClient } from '@prisma/client'
 import type {
   CreateShoppingListData,
   CreateShoppingListItemData,
@@ -11,7 +12,6 @@ import type {
   BaseShoppingListItem,
   ShoppingListWithRelations,
 } from '@/types/base/index.ts'
-import type { PrismaClient } from '@prisma/client'
 import { PrismaRepository } from './prisma-repository.ts'
 
 export class PrismaShoppingListRepository

@@ -70,12 +70,11 @@ model Recipe {
   author      User    @relation("RecipeAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   // Metadados
-  difficulty  Difficulty @default(MEDIUM)
-  prepMinutes Int
-  cookMinutes Int
-  servings    Int
-  videoUrl    String?
-  source      String?
+  difficulty Difficulty @default(MEDIUM)
+  prepTime   Int // Tempo total de preparo em minutos
+  servings   Int
+  videoUrl   String?
+  source     String?
 
   // Nutrição
   calories     Int? // Calorias por porção
@@ -160,8 +159,6 @@ model RecipeIngredient {
   ingredientId String
   amount       Float?
   unit         String?
-  note         String?
-  group        String?
 
   recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
@@ -170,19 +167,18 @@ model RecipeIngredient {
 }
 
 model Review {
-  id           String   @id @default(cuid())
-  recipeId     String
-  userId       String
-  rating       Int
-  comment      String?
-  helpfulCount Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default(cuid())
+  recipeId  String
+  userId    String
+  rating    Int // Rating de 1-5 (obrigatório)
+  comment   String? // Comentário opcional
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([recipeId, userId])
+  @@unique([recipeId, userId]) // Garante que cada usuário só pode avaliar uma receita uma vez
 }
 
 model Favorite {
