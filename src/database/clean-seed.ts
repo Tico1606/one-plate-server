@@ -52,7 +52,6 @@ async function main() {
     prisma.category.create({ data: { name: 'Almoço' } }),
     prisma.category.create({ data: { name: 'Jantar' } }),
     prisma.category.create({ data: { name: 'Sobremesa' } }),
-    prisma.category.create({ data: { name: 'Lanche' } }),
     prisma.category.create({ data: { name: 'Brasileira' } }),
     prisma.category.create({ data: { name: 'Italiana' } }),
   ])
@@ -133,8 +132,8 @@ async function main() {
   console.log('🍞 Criando receita: Pão de Açúcar...')
   const paoAcucar = await prisma.recipe.create({
     data: {
-      title: 'Pão de Açúcar Tradicional',
-      description: 'Um pão doce brasileiro tradicional, perfeito para o lanche.',
+      title: 'Pão de Açúcar',
+      description: 'Um pão doce brasileiro, perfeito para o lanche.',
       authorId: adminUser.id,
       difficulty: 'EASY',
       prepTime: 55,
@@ -145,6 +144,15 @@ async function main() {
       fatGrams: 6.8,
       status: 'PUBLISHED',
       publishedAt: new Date(),
+    },
+  })
+
+  // Adicionar fotos da receita
+  await prisma.recipePhoto.createMany({
+    data: {
+      recipeId: paoAcucar.id,
+      url: 'https://images.unsplash.com/photo-1647204799191-c55498267aea?q=80&w=1167&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      order: 0,
     },
   })
 
@@ -248,6 +256,15 @@ async function main() {
       fatGrams: 16.8,
       status: 'PUBLISHED',
       publishedAt: new Date(),
+    },
+  })
+
+  // Adicionar fotos da receita
+  await prisma.recipePhoto.createMany({
+    data: {
+      recipeId: carbonara.id,
+      url: 'https://tse1.mm.bing.net/th/id/OIP.Qf4Q8DUypnrXvTW-fi3FmwAAAA?pid=Api',
+      order: 0,
     },
   })
 
