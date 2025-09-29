@@ -18,7 +18,7 @@ declare module 'fastify' {
  * Middleware de desenvolvimento que simula autenticação
  * Usa tokens fixos para facilitar testes
  */
-export async function devAuthMiddleware(request: FastifyRequest, reply: FastifyReply) {
+export async function devAuthMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   const authHeader = request.headers.authorization
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -55,7 +55,7 @@ export async function devAuthMiddleware(request: FastifyRequest, reply: FastifyR
  */
 export async function devOptionalAuthMiddleware(
   request: FastifyRequest,
-  reply: FastifyReply,
+  _reply: FastifyReply,
 ) {
   const authHeader = request.headers.authorization
 
@@ -89,12 +89,12 @@ export async function devOptionalAuthMiddleware(
 /**
  * Função para escolher o middleware baseado no ambiente
  */
+import { authMiddleware, optionalAuthMiddleware } from './auth.ts'
+
 export function getAuthMiddleware() {
-  return env.NODE_ENV === 'dev' ? devAuthMiddleware : require('./auth.ts').authMiddleware
+  return env.NODE_ENV === 'dev' ? devAuthMiddleware : authMiddleware
 }
 
 export function getOptionalAuthMiddleware() {
-  return env.NODE_ENV === 'dev'
-    ? devOptionalAuthMiddleware
-    : require('./auth.ts').optionalAuthMiddleware
+  return env.NODE_ENV === 'dev' ? devOptionalAuthMiddleware : optionalAuthMiddleware
 }

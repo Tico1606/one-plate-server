@@ -1,5 +1,5 @@
-import { NotAllowedError } from '@/errors/index.ts'
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { NotAllowedError } from '@/errors/index.ts'
 
 /**
  * Middleware que verifica se o usuário tem role de ADMIN

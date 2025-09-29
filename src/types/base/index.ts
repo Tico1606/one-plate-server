@@ -21,8 +21,7 @@ export interface BaseRecipe {
   description?: string | null
   authorId: string
   difficulty: Difficulty
-  prepMinutes: number
-  cookMinutes: number
+  prepTime: number // Tempo total de preparo em minutos
   servings: number
   videoUrl?: string | null
   source?: string | null
@@ -78,7 +77,6 @@ export interface BaseReview {
   userId: string
   rating: number
   comment?: string | null
-  helpfulCount: number
   createdAt: Date
   updatedAt: Date
 }
@@ -175,3 +173,7 @@ export interface ShoppingListWithRelations extends BaseShoppingList {
     recipe?: BaseRecipe | null
   }>
 }
+
+export * from '../converters.ts'
+// Re-export DTOs for convenience
+export * from '../dtos.ts'

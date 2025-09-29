@@ -1,5 +1,7 @@
-import { clerkClient, getAuth } from '@clerk/fastify'
+import { createClerkClient } from '@clerk/clerk-sdk-node'
+import { getAuth } from '@clerk/fastify'
 import type { FastifyRequest } from 'fastify'
+import { env } from '@/constants/index.ts'
 import { userRepository } from '@/database/repositories.ts'
 
 export interface ClerkUser {
@@ -19,8 +21,13 @@ export async function getClerkUser(request: FastifyRequest): Promise<ClerkUser> 
       throw new Error('Usuário não autenticado')
     }
 
+    // Configurar clerkClient com a secret key
+    const clerk = createClerkClient({
+      secretKey: env.CLERK_SECRET_KEY,
+    })
+
     // Buscar dados do usuário no Clerk
-    const clerkUser = await clerkClient.users.getUser(userId)
+    const clerkUser = await clerk.users.getUser(userId)
 
     if (!clerkUser.emailAddresses[0]?.emailAddress) {
       throw new Error('Email não encontrado no usuário')
@@ -50,7 +57,7 @@ export async function getClerkUser(request: FastifyRequest): Promise<ClerkUser> 
       email,
       role: userFromDb?.role || 'USER',
     }
-  } catch {
+  } catch (_error) {
     throw new Error('Erro: Falha na obtenção dos dados do usuário')
   }
 }
