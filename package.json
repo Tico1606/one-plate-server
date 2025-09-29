@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node build/server.js",
+    "generate": "npx prisma generate",
     "migrate": "npx prisma migrate dev",
     "seed": "tsx src/database/seed.ts",
+    "Cseed": "tsx src/database/clean-seed.ts",
     "test": "vitest run --dir src/use-cases",
     "test:watch": "vitest --dir src/use-cases",
     "test:ui": "vitest --ui"
