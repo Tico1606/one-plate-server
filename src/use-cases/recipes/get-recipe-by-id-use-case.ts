@@ -1,4 +1,4 @@
-import { NotFoundError } from '@/errors/index.ts'
+import { NotAllowedError, NotFoundError } from '@/errors/index.ts'
 import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
 import { toRecipeDTO } from '@/types/converters.ts'
 import type { RecipeDTO } from '@/types/dtos.ts'
@@ -22,6 +22,17 @@ export class GetRecipeByIdUseCase {
 
     if (!recipe) {
       throw new NotFoundError('Receita não encontrada')
+    }
+
+    // Verificar permissões baseado no status da receita
+    // Se é DRAFT, apenas o autor pode ver
+    if (recipe.status === 'DRAFT') {
+      const isAuthor = recipe.authorId === userId
+      const isAdmin = false // TODO: verificar se é admin quando necessário
+
+      if (!isAuthor && !isAdmin) {
+        throw new NotAllowedError('Esta receita é privada')
+      }
     }
 
     // Incrementar visualização se usuário estiver logado

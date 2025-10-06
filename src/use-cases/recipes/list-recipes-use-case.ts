@@ -21,9 +21,15 @@ export class ListRecipesUseCase {
   async execute(request: ListRecipesRequest): Promise<ListRecipesResponse> {
     const { userId, ...params } = request
 
+    console.log('🔍 [LIST RECIPES DEBUG] Params recebidos:', params)
+
     // Se for para buscar receitas em destaque, usar método específico
     if (params.featured) {
       const result = await this.recipeRepository.findFeatured(params)
+      console.log('🔍 [LIST RECIPES DEBUG] Featured result:', {
+        total: result.total,
+        recipesCount: result.recipes.length,
+      })
       return {
         recipes: result.recipes.map(toRecipeListItemDTO),
         total: result.total,
@@ -35,6 +41,10 @@ export class ListRecipesUseCase {
 
     // Busca normal com relacionamentos
     const result = await this.recipeRepository.listWithRelations(params, userId)
+    console.log('🔍 [LIST RECIPES DEBUG] Result:', {
+      total: result.total,
+      recipesCount: result.recipes.length,
+    })
 
     return {
       recipes: result.recipes.map(toRecipeListItemDTO),
