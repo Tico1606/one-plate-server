@@ -35,6 +35,7 @@ export interface CreateRecipeData {
   carbGrams?: number | null
   fatGrams?: number | null
   status?: 'DRAFT' | 'PUBLISHED'
+  publishedAt?: Date | null
   photos?: Array<{
     url: string
     order: number
@@ -67,6 +68,7 @@ export interface UpdateRecipeData {
   carbGrams?: number | null
   fatGrams?: number | null
   status?: 'DRAFT' | 'PUBLISHED'
+  publishedAt?: Date | null
   photos?: Array<{
     url: string
     order: number
@@ -90,7 +92,8 @@ export interface ListRecipesParams {
   page: number
   limit: number
   search?: string
-  category?: string
+  category?: string // Mantido para compatibilidade
+  categories?: string[] // Array de nomes de categorias
   ingredient?: string
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD'
   prepTime?: number
@@ -98,6 +101,7 @@ export interface ListRecipesParams {
   featured?: boolean
   authorId?: string
   status?: 'DRAFT' | 'PUBLISHED'
+  publishedAt?: Date | null
   sortBy?:
     | 'createdAt'
     | 'title'

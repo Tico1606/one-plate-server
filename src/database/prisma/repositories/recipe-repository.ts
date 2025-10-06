@@ -142,6 +142,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
             carbGrams: data.carbGrams,
             fatGrams: data.fatGrams,
             status: data.status,
+            publishedAt: data.publishedAt,
           },
         })
 
@@ -218,6 +219,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
         carbGrams: data.carbGrams,
         fatGrams: data.fatGrams,
         status: data.status,
+        publishedAt: data.publishedAt,
       },
     })
 
@@ -238,6 +240,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       limit,
       search,
       category,
+      categories,
       ingredient,
       difficulty,
       prepTime,
@@ -258,6 +261,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       ]
     }
 
+    // Filtrar por categoria única (compatibilidade)
     if (category) {
       where.categories = {
         some: {
@@ -266,6 +270,19 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
           },
         },
       }
+    }
+
+    // Filtrar por múltiplas categorias (AND - todas devem estar presentes)
+    if (categories && categories.length > 0) {
+      where.AND = categories.map((categoryName) => ({
+        categories: {
+          some: {
+            category: {
+              name: { contains: categoryName, mode: 'insensitive' },
+            },
+          },
+        },
+      }))
     }
 
     if (ingredient) {
@@ -332,6 +349,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       limit,
       search,
       category,
+      categories,
       ingredient,
       difficulty,
       prepTime,
@@ -343,24 +361,85 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
     } = params
     const skip = (page - 1) * limit
 
+    console.log('🔍 [REPOSITORY DEBUG] Params recebidos:', {
+      category,
+      categories,
+      search,
+      ingredient,
+    })
+
     const where: any = {}
 
     if (search) {
+      // Normalizar o termo de busca removendo acentos
+      const normalizedSearch = search
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+      console.log('🔍 [REPOSITORY DEBUG] Search original:', search)
+      console.log('🔍 [REPOSITORY DEBUG] Search normalizado:', normalizedSearch)
+
+      // Usar raw query para aplicar unaccent nos campos do banco
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        {
+          title: {
+            contains: search, // Usar search original para compatibilidade
+            mode: 'insensitive',
+          },
+        },
+        {
+          ingredients: {
+            some: {
+              ingredient: {
+                name: {
+                  contains: search, // Usar search original para compatibilidade
+                  mode: 'insensitive',
+                },
+              },
+            },
+          },
+        },
       ]
     }
 
+    // Filtrar por categoria única (compatibilidade)
     if (category) {
-      where.categories = {
-        some: {
-          category: {
-            name: { contains: category, mode: 'insensitive' },
+      console.log('🔍 [REPOSITORY DEBUG] Filtrando por categoria única:', category)
+      // Se category parece ser um ID (cuid), filtrar por ID, senão por nome
+      if (category.startsWith('cmg') || category.length > 20) {
+        where.categories = {
+          some: {
+            categoryId: category,
           },
-        },
+        }
+      } else {
+        where.categories = {
+          some: {
+            category: {
+              name: { contains: category, mode: 'insensitive' },
+            },
+          },
+        }
       }
     }
+
+    // Filtrar por múltiplas categorias (AND - todas devem estar presentes)
+    if (categories && categories.length > 0) {
+      console.log('🔍 [REPOSITORY DEBUG] Filtrando por múltiplas categorias:', categories)
+      where.AND = categories.map((categoryId) => ({
+        categories: {
+          some: {
+            categoryId: categoryId,
+          },
+        },
+      }))
+    }
+
+    console.log(
+      '🔍 [REPOSITORY DEBUG] Where clause final:',
+      JSON.stringify(where, null, 2),
+    )
 
     if (ingredient) {
       where.ingredients = {
@@ -392,76 +471,142 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       where.status = status
     }
 
-    // Configurar ordenação
-    const orderBy: any = {}
-    if (sortBy) {
-      if (sortBy === 'favorites') {
-        orderBy.favorites = { _count: sortOrder || 'desc' }
-      } else if (sortBy === 'averageRating') {
-        // Para averageRating, ordenar por createdAt como fallback
-        // O rating será calculado depois e ordenado em memória
-        orderBy.createdAt = sortOrder || 'desc'
-      } else {
-        orderBy[sortBy] = sortOrder || 'desc'
-      }
-    } else {
-      orderBy.createdAt = 'desc' // Padrão
-    }
+    // Se há busca, usar raw query com unaccent
+    let recipes: any, total: number
+    if (search) {
+      const normalizedSearch = search
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
 
-    const [recipes, total] = await Promise.all([
-      this.prisma.recipe.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
+      console.log(
+        '🔍 [REPOSITORY DEBUG] Usando raw query com unaccent para:',
+        normalizedSearch,
+      )
+
+      // Habilitar extensão unaccent se não existir
+      await this.prisma.$executeRaw`CREATE EXTENSION IF NOT EXISTS unaccent;`
+
+      // Raw query com unaccent para remover acentos
+      const rawQuery = `
+        SELECT DISTINCT r.* FROM "Recipe" r
+        LEFT JOIN "RecipeIngredient" ri ON r.id = ri."recipeId"
+        LEFT JOIN "Ingredient" i ON ri."ingredientId" = i.id
+        WHERE (
+          unaccent(lower(r.title)) ILIKE unaccent(lower($1)) OR
+          unaccent(lower(i.name)) ILIKE unaccent(lower($1))
+        )
+        ORDER BY r."createdAt" DESC
+        LIMIT $2 OFFSET $3
+      `
+
+      const countQuery = `
+        SELECT COUNT(DISTINCT r.id) as count FROM "Recipe" r
+        LEFT JOIN "RecipeIngredient" ri ON r.id = ri."recipeId"
+        LEFT JOIN "Ingredient" i ON ri."ingredientId" = i.id
+        WHERE (
+          unaccent(lower(r.title)) ILIKE unaccent(lower($1)) OR
+          unaccent(lower(i.name)) ILIKE unaccent(lower($1))
+        )
+      `
+
+      const [rawRecipes, rawCount] = await Promise.all([
+        this.prisma.$queryRawUnsafe(rawQuery, `%${normalizedSearch}%`, limit, skip),
+        this.prisma.$queryRawUnsafe(countQuery, `%${normalizedSearch}%`),
+      ])
+
+      const recipeIds = (rawRecipes as any[]).map((r) => r.id)
+
+      // Buscar receitas completas com relacionamentos
+      recipes = await this.prisma.recipe.findMany({
+        where: { id: { in: recipeIds } },
         include: {
           author: true,
-          photos: {
-            orderBy: { order: 'asc' },
-          },
-          steps: {
-            orderBy: { order: 'asc' },
-          },
-          categories: {
-            include: {
-              category: true,
-            },
-          },
-          ingredients: {
-            include: {
-              ingredient: true,
-            },
-          },
-          reviews: {
-            include: {
-              user: true,
-            },
-          },
-          favorites: userId
-            ? {
-                where: { userId },
-              }
-            : false,
-          views: userId
-            ? {
-                where: { userId },
-              }
-            : false,
-          _count: {
-            select: {
-              reviews: true,
-              favorites: true,
-              views: true,
-            },
-          },
+          photos: { orderBy: { order: 'asc' } },
+          steps: { orderBy: { order: 'asc' } },
+          categories: { include: { category: true } },
+          ingredients: { include: { ingredient: true } },
+          reviews: { include: { user: true } },
+          favorites: userId ? { where: { userId } } : false,
+          views: userId ? { where: { userId } } : false,
+          _count: { select: { reviews: true, favorites: true, views: true } },
         },
-      }),
-      this.prisma.recipe.count({ where }),
-    ])
+        orderBy: { createdAt: 'desc' },
+      })
+
+      total = Number((rawCount as any[])[0].count)
+    } else {
+      // Configurar ordenação
+      const orderBy: any = {}
+      if (sortBy) {
+        if (sortBy === 'favorites') {
+          orderBy.favorites = { _count: sortOrder || 'desc' }
+        } else if (sortBy === 'averageRating') {
+          // Para averageRating, ordenar por createdAt como fallback
+          // O rating será calculado depois e ordenado em memória
+          orderBy.createdAt = sortOrder || 'desc'
+        } else {
+          orderBy[sortBy] = sortOrder || 'desc'
+        }
+      } else {
+        orderBy.createdAt = 'desc' // Padrão
+      }
+      // Query normal sem busca
+      ;[recipes, total] = await Promise.all([
+        this.prisma.recipe.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy,
+          include: {
+            author: true,
+            photos: {
+              orderBy: { order: 'asc' },
+            },
+            steps: {
+              orderBy: { order: 'asc' },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+            reviews: {
+              include: {
+                user: true,
+              },
+            },
+            favorites: userId
+              ? {
+                  where: { userId },
+                }
+              : false,
+            views: userId
+              ? {
+                  where: { userId },
+                }
+              : false,
+            _count: {
+              select: {
+                reviews: true,
+                favorites: true,
+                views: true,
+              },
+            },
+          },
+        }),
+        this.prisma.recipe.count({ where }),
+      ])
+    }
 
     // Calcular rating médio para cada receita
     const recipesWithRating = await Promise.all(
-      recipes.map(async (recipe) => {
+      recipes.map(async (recipe: any) => {
         const averageRating = await this.prisma.review.aggregate({
           where: { recipeId: recipe.id },
           _avg: { rating: true },
