@@ -53,7 +53,7 @@ export class FastifyApp implements IServerApp {
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin: env.NODE_ENV === 'test' ? env.FRONTEND_DOMAIN : '*',
+      origin: env.NODE_ENV === 'prod' ? env.FRONTEND_DOMAIN : '*',
     })
   }
 
@@ -61,6 +61,7 @@ export class FastifyApp implements IServerApp {
     this.app.register(async (fastify) => {
       const {
         categoriesRoutes,
+        favoritesRoutes,
         ingredientsRoutes,
         recipesRoutes,
         usersRoutes,
@@ -68,6 +69,7 @@ export class FastifyApp implements IServerApp {
       } = await import('@/controllers/index.ts')
 
       fastify.register(categoriesRoutes, { prefix: '/api' })
+      fastify.register(favoritesRoutes, { prefix: '/api' })
       fastify.register(ingredientsRoutes, { prefix: '/api' })
       fastify.register(recipesRoutes, { prefix: '/api' })
       fastify.register(usersRoutes, { prefix: '/api' })

@@ -7,6 +7,8 @@ import {
   DeleteRecipeUseCase,
   GetRecipeByIdUseCase,
   ListRecipesUseCase,
+  PublishRecipeUseCase,
+  UnpublishRecipeUseCase,
   UpdateRecipeUseCase,
 } from '@/use-cases/recipes/index.ts'
 
@@ -60,7 +62,11 @@ const listRecipesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
   search: z.string().optional(),
-  category: z.string().optional(),
+  category: z.string().optional(), // Mantido para compatibilidade
+  categories: z.preprocess((val) => {
+    if (typeof val === 'string') return val.split(',').map((s) => s.trim())
+    return val
+  }, z.array(z.string()).optional()),
   ingredient: z.string().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
   prepTime: z.coerce.number().int().min(0).optional(),
@@ -82,7 +88,7 @@ const listRecipesSchema = z.object({
 })
 
 export async function recipesRoutes(fastify: FastifyInstance) {
-  // Listar receitas (público, com autenticação opcional)
+  // Listar receitas públicas (só receitas PUBLISHED)
   fastify.get(
     '/recipes',
     {
@@ -93,9 +99,41 @@ export async function recipesRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const useCase = new ListRecipesUseCase(recipeRepository)
+
+      // Lista geral só mostra receitas PUBLICADAS para todos (logados ou não)
       const result = await useCase.execute({
         ...(request.query as any),
-        userId: request.user?.id,
+        status: 'PUBLISHED', // Filtrar apenas receitas publicadas
+      })
+
+      return reply.send(result)
+    },
+  )
+
+  // Listar receitas do usuário (incluindo rascunhos) - autenticado
+  fastify.get(
+    '/recipes/my-recipes',
+    {
+      schema: {
+        querystring: z.object({
+          page: z.coerce.number().int().min(1).default(1),
+          limit: z.coerce.number().int().min(1).max(100).default(20),
+          status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+        }),
+      },
+      preHandler: [getOptionalAuthMiddleware()],
+    },
+    async (request, reply) => {
+      const useCase = new ListRecipesUseCase(recipeRepository)
+
+      if (!request.user) {
+        return reply.status(401).send({ message: 'Usuário não autenticado' })
+      }
+
+      const query = request.query as any
+      const result = await useCase.execute({
+        ...query,
+        authorId: request.user.id, // Filtrar apenas receitas do usuário
       })
 
       return reply.send(result)
@@ -204,6 +242,62 @@ export async function recipesRoutes(fastify: FastifyInstance) {
       })
 
       return reply.status(204).send()
+    },
+  )
+
+  // Publicar receita (autenticado, apenas autor ou admin)
+  fastify.put(
+    '/recipes/:id/publish',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+      },
+      preHandler: [getAuthMiddleware()],
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const useCase = new PublishRecipeUseCase(recipeRepository)
+      if (!request.user) {
+        return reply.status(401).send({ message: 'Usuário não autenticado' })
+      }
+
+      const result = await useCase.execute({
+        recipeId: id,
+        requesterId: request.user.id,
+        requesterRole: request.user.role,
+      })
+
+      return reply.send(result)
+    },
+  )
+
+  // Despublicar receita (autenticado, apenas autor ou admin)
+  fastify.put(
+    '/recipes/:id/unpublish',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+      },
+      preHandler: [getAuthMiddleware()],
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const useCase = new UnpublishRecipeUseCase(recipeRepository)
+      if (!request.user) {
+        return reply.status(401).send({ message: 'Usuário não autenticado' })
+      }
+
+      const result = await useCase.execute({
+        recipeId: id,
+        requesterId: request.user.id,
+        requesterRole: request.user.role,
+      })
+
+      return reply.send(result)
     },
   )
 }
