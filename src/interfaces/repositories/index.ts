@@ -1,6 +1,7 @@
 export { CategoryRepository } from './category-repository.ts'
 export { FavoriteRepository } from './favorite-repository.ts'
 export { IngredientRepository } from './ingredient-repository.ts'
+export { PushSubscriptionRepository } from './push-subscription-repository.ts'
 export { RecipeRepository } from './recipe-repository.ts'
 export { ReviewRepository } from './review-repository.ts'
 export { ShoppingListRepository } from './shopping-list-repository.ts'

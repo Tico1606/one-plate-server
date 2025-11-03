@@ -49,6 +49,7 @@ export class PrismaUserRepository extends PrismaRepository implements UserReposi
         id: data.id,
         email: data.email,
         name: data.name,
+        description: data.description,
         photoUrl: data.photoUrl,
         role: data.role || 'USER',
       },
@@ -62,6 +63,7 @@ export class PrismaUserRepository extends PrismaRepository implements UserReposi
       where: { id },
       data: {
         name: data.name,
+        description: data.description,
         photoUrl: data.photoUrl,
         role: data.role,
       },
@@ -85,6 +87,7 @@ export class PrismaUserRepository extends PrismaRepository implements UserReposi
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { email: { contains: search, mode: 'insensitive' as const } },
+            { description: { contains: search, mode: 'insensitive' as const } },
           ],
         }
       : {}
@@ -113,6 +116,7 @@ export class PrismaUserRepository extends PrismaRepository implements UserReposi
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { email: { contains: search, mode: 'insensitive' as const } },
+            { description: { contains: search, mode: 'insensitive' as const } },
           ],
         }
       : {}

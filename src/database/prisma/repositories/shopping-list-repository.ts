@@ -1,8 +1,6 @@
-import type { PrismaClient } from '@prisma/client'
 import type {
   CreateShoppingListData,
   CreateShoppingListItemData,
-  ListShoppingListsParams,
   ShoppingListRepository,
   UpdateShoppingListData,
   UpdateShoppingListItemData,
@@ -18,17 +16,24 @@ export class PrismaShoppingListRepository
   extends PrismaRepository
   implements ShoppingListRepository
 {
-  async findById(id: string): Promise<BaseShoppingList | null> {
-    const list = await this.prisma.shoppingList.findUnique({
-      where: { id },
+  async findByUserId(userId: string): Promise<BaseShoppingList | null> {
+    let list = await this.prisma.shoppingList.findUnique({
+      where: { userId },
     })
+
+    // Se não existe lista, criar uma automaticamente
+    if (!list) {
+      list = await this.create({ userId })
+    }
 
     return list
   }
 
-  async findByIdWithRelations(id: string): Promise<ShoppingListWithRelations | null> {
-    const list = await this.prisma.shoppingList.findUnique({
-      where: { id },
+  async findByUserIdWithRelations(
+    userId: string,
+  ): Promise<ShoppingListWithRelations | null> {
+    let list = await this.prisma.shoppingList.findUnique({
+      where: { userId },
       include: {
         user: true,
         items: {
@@ -41,42 +46,12 @@ export class PrismaShoppingListRepository
       },
     })
 
-    return list as ShoppingListWithRelations | null
-  }
-
-  async findByUserId(
-    userId: string,
-    params: ListShoppingListsParams,
-  ): Promise<{ lists: BaseShoppingList[]; total: number }> {
-    const { page, limit } = params
-    const skip = (page - 1) * limit
-
-    const [lists, total] = await Promise.all([
-      this.prisma.shoppingList.findMany({
+    // Se não existe lista, criar uma automaticamente
+    if (!list) {
+      await this.create({ userId })
+      // Buscar novamente com relations
+      list = await this.prisma.shoppingList.findUnique({
         where: { userId },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.shoppingList.count({ where: { userId } }),
-    ])
-
-    return { lists, total }
-  }
-
-  async findByUserIdWithRelations(
-    userId: string,
-    params: ListShoppingListsParams,
-  ): Promise<{ lists: ShoppingListWithRelations[]; total: number }> {
-    const { page, limit } = params
-    const skip = (page - 1) * limit
-
-    const [lists, total] = await Promise.all([
-      this.prisma.shoppingList.findMany({
-        where: { userId },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
         include: {
           user: true,
           items: {
@@ -87,11 +62,10 @@ export class PrismaShoppingListRepository
             orderBy: { createdAt: 'asc' },
           },
         },
-      }),
-      this.prisma.shoppingList.count({ where: { userId } }),
-    ])
+      })
+    }
 
-    return { lists: lists as ShoppingListWithRelations[], total }
+    return list as ShoppingListWithRelations | null
   }
 
   async create(data: CreateShoppingListData): Promise<BaseShoppingList> {
@@ -105,9 +79,9 @@ export class PrismaShoppingListRepository
     return list
   }
 
-  async update(id: string, data: UpdateShoppingListData): Promise<BaseShoppingList> {
+  async update(userId: string, data: UpdateShoppingListData): Promise<BaseShoppingList> {
     const list = await this.prisma.shoppingList.update({
-      where: { id },
+      where: { userId },
       data: {
         title: data.title,
       },
@@ -116,19 +90,25 @@ export class PrismaShoppingListRepository
     return list
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(userId: string): Promise<void> {
     await this.prisma.shoppingList.delete({
-      where: { id },
+      where: { userId },
     })
   }
 
   async addItemToList(
-    listId: string,
+    userId: string,
     itemData: CreateShoppingListItemData,
   ): Promise<BaseShoppingListItem> {
+    // Primeiro, encontrar ou criar a lista do usuário
+    let list = await this.findByUserId(userId)
+    if (!list) {
+      list = await this.create({ userId })
+    }
+
     const item = await this.prisma.shoppingListItem.create({
       data: {
-        listId,
+        listId: list.id,
         ingredientId: itemData.ingredientId,
         recipeId: itemData.recipeId,
         customText: itemData.customText,
@@ -165,9 +145,14 @@ export class PrismaShoppingListRepository
     })
   }
 
-  async getItemsByList(listId: string): Promise<BaseShoppingListItem[]> {
+  async getItemsByUserId(userId: string): Promise<BaseShoppingListItem[]> {
+    const list = await this.findByUserId(userId)
+    if (!list) {
+      return []
+    }
+
     const items = await this.prisma.shoppingListItem.findMany({
-      where: { listId },
+      where: { listId: list.id },
       include: {
         ingredient: true,
         recipe: true,
@@ -197,10 +182,15 @@ export class PrismaShoppingListRepository
     return updatedItem
   }
 
-  async clearCheckedItems(listId: string): Promise<void> {
+  async clearCheckedItems(userId: string): Promise<void> {
+    const list = await this.findByUserId(userId)
+    if (!list) {
+      return
+    }
+
     await this.prisma.shoppingListItem.deleteMany({
       where: {
-        listId,
+        listId: list.id,
         isChecked: true,
       },
     })

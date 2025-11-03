@@ -5,24 +5,16 @@ import type {
 } from '@/types/base/index.ts'
 
 export interface ShoppingListRepository {
-  // Métodos para a lista principal
-  findById(id: string): Promise<BaseShoppingList | null>
-  findByIdWithRelations(id: string): Promise<ShoppingListWithRelations | null>
-  findByUserId(
-    userId: string,
-    params: ListShoppingListsParams,
-  ): Promise<{ lists: BaseShoppingList[]; total: number }>
-  findByUserIdWithRelations(
-    userId: string,
-    params: ListShoppingListsParams,
-  ): Promise<{ lists: ShoppingListWithRelations[]; total: number }>
+  // Métodos para a lista principal (agora única por usuário)
+  findByUserId(userId: string): Promise<BaseShoppingList | null>
+  findByUserIdWithRelations(userId: string): Promise<ShoppingListWithRelations | null>
   create(data: CreateShoppingListData): Promise<BaseShoppingList>
-  update(id: string, data: UpdateShoppingListData): Promise<BaseShoppingList>
-  delete(id: string): Promise<void>
+  update(userId: string, data: UpdateShoppingListData): Promise<BaseShoppingList>
+  delete(userId: string): Promise<void>
 
   // Métodos para os itens da lista
   addItemToList(
-    listId: string,
+    userId: string,
     itemData: CreateShoppingListItemData,
   ): Promise<BaseShoppingListItem>
   updateItemInList(
@@ -30,9 +22,9 @@ export interface ShoppingListRepository {
     itemData: UpdateShoppingListItemData,
   ): Promise<BaseShoppingListItem>
   removeItemFromList(itemId: string): Promise<void>
-  getItemsByList(listId: string): Promise<BaseShoppingListItem[]>
+  getItemsByUserId(userId: string): Promise<BaseShoppingListItem[]>
   toggleItemChecked(itemId: string): Promise<BaseShoppingListItem>
-  clearCheckedItems(listId: string): Promise<void>
+  clearCheckedItems(userId: string): Promise<void>
 }
 
 export interface CreateShoppingListData {
@@ -59,9 +51,4 @@ export interface UpdateShoppingListItemData {
   amount?: number | null
   unit?: string | null
   isChecked?: boolean
-}
-
-export interface ListShoppingListsParams {
-  page: number
-  limit: number
 }

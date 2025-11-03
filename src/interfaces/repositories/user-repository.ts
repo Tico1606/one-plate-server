@@ -17,12 +17,14 @@ export interface CreateUserData {
   id: string
   email: string
   name?: string | null
+  description?: string | null
   photoUrl?: string | null
   role?: 'USER' | 'ADMIN'
 }
 
 export interface UpdateUserData {
   name?: string | null
+  description?: string | null
   photoUrl?: string | null
   role?: 'USER' | 'ADMIN'
 }

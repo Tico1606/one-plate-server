@@ -30,10 +30,10 @@ export interface CreateRecipeData {
   servings: number
   videoUrl?: string | null
   source?: string | null
-  calories?: number | null
-  proteinGrams?: number | null
-  carbGrams?: number | null
-  fatGrams?: number | null
+  calories?: string | null
+  proteinGrams?: string | null
+  carbGrams?: string | null
+  fatGrams?: string | null
   status?: 'DRAFT' | 'PUBLISHED'
   publishedAt?: Date | null
   photos?: Array<{
@@ -63,10 +63,10 @@ export interface UpdateRecipeData {
   servings?: number
   videoUrl?: string | null
   source?: string | null
-  calories?: number | null
-  proteinGrams?: number | null
-  carbGrams?: number | null
-  fatGrams?: number | null
+  calories?: string | null
+  proteinGrams?: string | null
+  carbGrams?: string | null
+  fatGrams?: string | null
   status?: 'DRAFT' | 'PUBLISHED'
   publishedAt?: Date | null
   photos?: Array<{

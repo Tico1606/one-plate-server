@@ -13,7 +13,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       where: { id },
     })
 
-    return recipe
+    return recipe as BaseRecipe
   }
 
   async findByIdWithRelations(
@@ -65,7 +65,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       },
     })
 
-    return recipe as RecipeWithRelations | null
+    return recipe as BaseRecipe as RecipeWithRelations | null
   }
 
   async create(data: CreateRecipeData): Promise<BaseRecipe> {
@@ -119,7 +119,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       },
     })
 
-    return recipe
+    return recipe as BaseRecipe
   }
 
   async update(id: string, data: UpdateRecipeData): Promise<BaseRecipe> {
@@ -199,7 +199,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
           }
         }
 
-        return recipe
+        return recipe as BaseRecipe
       })
     }
 
@@ -223,7 +223,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       },
     })
 
-    return recipe
+    return recipe as BaseRecipe
   }
 
   async delete(id: string): Promise<void> {
@@ -337,7 +337,7 @@ export class PrismaRecipeRepository extends PrismaRepository implements RecipeRe
       this.prisma.recipe.count({ where }),
     ])
 
-    return { recipes, total }
+    return { recipes: recipes as BaseRecipe[], total }
   }
 
   async listWithRelations(
