@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { reviewRepository } from '@/database/repositories.ts'
+import {
+  recipeRepository,
+  reviewRepository,
+  userRepository,
+} from '@/database/repositories.ts'
 import { getAuthMiddleware } from '@/middleware/dev-auth.ts'
 import {
   CreateReviewUseCase,
@@ -37,7 +41,11 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
       preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
-      const useCase = new CreateReviewUseCase(reviewRepository)
+      const useCase = new CreateReviewUseCase(
+        reviewRepository,
+        recipeRepository,
+        userRepository,
+      )
       if (!request.user) {
         return reply.status(401).send({ message: 'Usuário não autenticado' })
       }

@@ -1,5 +1,6 @@
 import { clerkPlugin } from '@clerk/fastify'
 import fastifyCors from '@fastify/cors'
+import fastifyMultipart from '@fastify/multipart'
 import fastify, { type FastifyInstance } from 'fastify'
 import {
   serializerCompiler,
@@ -27,6 +28,7 @@ export class FastifyApp implements IServerApp {
 
     this.registerClerk()
     this.registerCors()
+    this.registerMultipart()
     this.registerRoutes()
     this.setErrorHandler()
   }
@@ -57,23 +59,37 @@ export class FastifyApp implements IServerApp {
     })
   }
 
+  private registerMultipart() {
+    this.app.register(fastifyMultipart, {
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB limite global
+      },
+    })
+  }
+
   private registerRoutes() {
     this.app.register(async (fastify) => {
       const {
         categoriesRoutes,
         favoritesRoutes,
         ingredientsRoutes,
+        notificationRoutes,
         recipesRoutes,
         usersRoutes,
         reviewsRoutes,
+        shoppingListRoutes,
+        uploadsRoutes,
       } = await import('@/controllers/index.ts')
 
       fastify.register(categoriesRoutes, { prefix: '/api' })
       fastify.register(favoritesRoutes, { prefix: '/api' })
       fastify.register(ingredientsRoutes, { prefix: '/api' })
+      fastify.register(notificationRoutes, { prefix: '/api' })
       fastify.register(recipesRoutes, { prefix: '/api' })
       fastify.register(usersRoutes, { prefix: '/api' })
       fastify.register(reviewsRoutes, { prefix: '/api' })
+      fastify.register(shoppingListRoutes, { prefix: '/api' })
+      fastify.register(uploadsRoutes, { prefix: '/api' })
     })
   }
 

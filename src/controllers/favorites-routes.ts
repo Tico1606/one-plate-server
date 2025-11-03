@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { favoriteRepository } from '@/database/repositories.ts'
+import {
+  favoriteRepository,
+  recipeRepository,
+  userRepository,
+} from '@/database/repositories.ts'
 import { getAuthMiddleware, getOptionalAuthMiddleware } from '@/middleware/dev-auth.ts'
 import {
   CreateFavoriteUseCase,
@@ -31,7 +35,11 @@ export async function favoritesRoutes(fastify: FastifyInstance) {
       preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
-      const useCase = new CreateFavoriteUseCase(favoriteRepository)
+      const useCase = new CreateFavoriteUseCase(
+        favoriteRepository,
+        recipeRepository,
+        userRepository,
+      )
 
       if (!request.user) {
         return reply.status(401).send({ message: 'Usuário não autenticado' })

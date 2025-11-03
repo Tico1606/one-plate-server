@@ -15,16 +15,28 @@ import {
 // Schemas de validação
 const createRecipeSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
   prepTime: z.number().int().min(0),
   servings: z.number().int().min(1),
-  videoUrl: z.string().url().optional(),
-  source: z.string().optional(),
-  calories: z.number().int().min(0).optional(),
-  proteinGrams: z.number().min(0).optional(),
-  carbGrams: z.number().min(0).optional(),
-  fatGrams: z.number().min(0).optional(),
+  videoUrl: z.string().url().nullable().optional(),
+  source: z.string().nullable().optional(),
+  calories: z
+    .union([z.number().int().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  proteinGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  carbGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  fatGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
   photos: z
     .array(
       z.object({
@@ -54,6 +66,7 @@ const createRecipeSchema = z.object({
     )
     .min(1, 'Pelo menos um ingrediente é obrigatório'),
   categories: z.array(z.string()).default([]),
+  status: z.enum(['DRAFT', 'PUBLISHED']).optional().default('DRAFT'),
 })
 
 const updateRecipeSchema = createRecipeSchema.partial()
@@ -95,7 +108,6 @@ export async function recipesRoutes(fastify: FastifyInstance) {
       schema: {
         querystring: listRecipesSchema,
       },
-      preHandler: [getOptionalAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new ListRecipesUseCase(recipeRepository)
@@ -121,7 +133,7 @@ export async function recipesRoutes(fastify: FastifyInstance) {
           status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
         }),
       },
-      preHandler: [getOptionalAuthMiddleware()],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const useCase = new ListRecipesUseCase(recipeRepository)

@@ -1,18 +1,27 @@
+import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { userRepository } from '@/database/repositories.ts'
 import { getAuthMiddleware } from '@/middleware/dev-auth.ts'
-import { adminOnlyMiddleware, adminOrOwnerMiddleware } from '@/middleware/role.ts'
 import {
+  CreateUserUseCase,
   DeleteUserUseCase,
   GetUserByIdUseCase,
   ListUsersUseCase,
   UpdateUserProfileUseCase,
 } from '@/use-cases/users/index.ts'
-import type { FastifyInstance } from 'fastify'
-import { z } from 'zod'
 
 // Schemas de validação
+const createUserSchema = z.object({
+  email: z.string().email('Email deve ser válido'),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  photoUrl: z.string().url().optional(),
+  role: z.enum(['USER', 'ADMIN']).optional(),
+})
+
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
+  description: z.string().optional(),
   photoUrl: z.string().url().optional(),
   role: z.enum(['USER', 'ADMIN']).optional(),
 })
@@ -24,6 +33,22 @@ const listUsersSchema = z.object({
 })
 
 export async function usersRoutes(fastify: FastifyInstance) {
+  // Criar usuário
+  fastify.post(
+    '/users',
+    {
+      schema: {
+        body: createUserSchema,
+      },
+    },
+    async (request, reply) => {
+      const useCase = new CreateUserUseCase(userRepository)
+      const result = await useCase.execute(request.body as any)
+
+      return reply.status(201).send(result)
+    },
+  )
+
   // Listar usuários (apenas ADMIN)
   fastify.get(
     '/users',
@@ -31,7 +56,6 @@ export async function usersRoutes(fastify: FastifyInstance) {
       schema: {
         querystring: listUsersSchema,
       },
-      preHandler: [getAuthMiddleware(), adminOnlyMiddleware],
     },
     async (request, reply) => {
       const useCase = new ListUsersUseCase(userRepository)
@@ -50,7 +74,6 @@ export async function usersRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [getAuthMiddleware(), adminOrOwnerMiddleware],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
@@ -114,7 +137,7 @@ export async function usersRoutes(fastify: FastifyInstance) {
           id: z.string(),
         }),
       },
-      preHandler: [getAuthMiddleware(), adminOnlyMiddleware],
+      preHandler: [getAuthMiddleware()],
     },
     async (request, reply) => {
       const { id } = request.params as { id: string }
