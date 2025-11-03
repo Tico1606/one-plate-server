@@ -9,6 +9,7 @@ export interface BaseUser {
   id: string
   email: string
   name?: string | null
+  description?: string | null
   photoUrl?: string | null
   role: Role
   createdAt: Date
@@ -25,10 +26,10 @@ export interface BaseRecipe {
   servings: number
   videoUrl?: string | null
   source?: string | null
-  calories?: number | null
-  proteinGrams?: number | null
-  carbGrams?: number | null
-  fatGrams?: number | null
+  calories?: string | null
+  proteinGrams?: string | null
+  carbGrams?: string | null
+  fatGrams?: string | null
   status: RecipeStatus
   publishedAt?: Date | null
   createdAt: Date
@@ -111,6 +112,8 @@ export interface BaseShoppingListItem {
   amount?: number | null
   unit?: string | null
   isChecked: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 // Interfaces com relacionamentos
@@ -169,6 +172,8 @@ export interface ShoppingListWithRelations extends BaseShoppingList {
     amount?: number | null
     unit?: string | null
     isChecked: boolean
+    createdAt: Date
+    updatedAt: Date
     ingredient?: BaseIngredient | null
     recipe?: BaseRecipe | null
   }>

@@ -8,6 +8,7 @@ export type UserDTO = {
   id: string
   email: string
   name: string | null | undefined
+  description: string | null | undefined
   photoUrl: string | null | undefined
   role: 'USER' | 'ADMIN'
   createdAt: Date

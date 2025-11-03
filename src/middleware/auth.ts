@@ -20,10 +20,15 @@ declare module 'fastify' {
  * O frontend envia o token no header Authorization: Bearer <token>
  */
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+  console.log('🔍 [CLERK AUTH] Iniciando middleware de autenticação')
+  console.log('🔍 [CLERK AUTH] Headers:', request.headers)
+
   try {
     const user = await getClerkUser(request)
+    console.log('✅ [CLERK AUTH] Usuário autenticado com sucesso:', user)
     request.user = user
-  } catch (_error) {
+  } catch (error) {
+    console.log('❌ [CLERK AUTH] Erro na autenticação:', error)
     throw new NotAllowedError('Usuário não autenticado ou token inválido')
   }
 }

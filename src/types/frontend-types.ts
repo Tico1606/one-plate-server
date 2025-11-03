@@ -108,6 +108,7 @@ export interface User {
   id: string
   email: string
   name?: string
+  description?: string
   photoUrl?: string
   role: Role
   createdAt: Date
@@ -333,6 +334,7 @@ export interface RecipeFormData {
 export interface UserFormData {
   name: string
   email: string
+  description?: string
   photoUrl: File | string
 }
 

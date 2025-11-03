@@ -9,7 +9,6 @@ export async function adminOnlyMiddleware(request: FastifyRequest, reply: Fastif
     throw new NotAllowedError('Usuário não autenticado')
   }
 
-  // Verificar role do usuário (que já vem do banco de dados via supabase-auth)
   if (request.user.role !== 'ADMIN') {
     throw new NotAllowedError(
       'Acesso negado. Apenas administradores podem realizar esta ação',
@@ -30,7 +29,6 @@ export async function adminOrOwnerMiddleware(
 
   const targetUserId = (request.params as any)?.id || (request.params as any)?.userId
 
-  // Verificar role do usuário (que já vem do banco de dados via supabase-auth)
   const isAdmin = request.user.role === 'ADMIN'
   const isOwner = request.user.id === targetUserId
 
