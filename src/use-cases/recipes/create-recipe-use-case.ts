@@ -3,6 +3,7 @@ import type { RecipeRepository } from '@/interfaces/repositories/index.ts'
 import type { CreateRecipeData } from '@/interfaces/repositories/recipe-repository.ts'
 import { toRecipeDTO } from '@/types/converters.ts'
 import type { RecipeDTO } from '@/types/dtos.ts'
+import { processNutritionalFields } from '@/utils/nutrition-processor.ts'
 
 export interface CreateRecipeRequest extends CreateRecipeData {}
 
@@ -14,20 +15,23 @@ export class CreateRecipeUseCase {
   constructor(private recipeRepository: RecipeRepository) {}
 
   async execute(request: CreateRecipeRequest): Promise<CreateRecipeResponse> {
+    // Processar campos nutricionais (substituir vazios por "-")
+    const processedRequest = processNutritionalFields(request)
+
     // Validações básicas
-    if (!request.title?.trim()) {
+    if (!processedRequest.title?.trim()) {
       throw new ValidationError('Título é obrigatório')
     }
 
-    if (!request.authorId) {
+    if (!processedRequest.authorId) {
       throw new ValidationError('ID do autor é obrigatório')
     }
 
-    if (!request.steps || request.steps.length === 0) {
+    if (!processedRequest.steps || processedRequest.steps.length === 0) {
       throw new ValidationError('Pelo menos um passo é obrigatório')
     }
 
-    if (!request.ingredients || request.ingredients.length === 0) {
+    if (!processedRequest.ingredients || processedRequest.ingredients.length === 0) {
       throw new ValidationError('Pelo menos um ingrediente é obrigatório')
     }
 
@@ -35,8 +39,8 @@ export class CreateRecipeUseCase {
     const existingRecipes = await this.recipeRepository.list({
       page: 1,
       limit: 1,
-      search: request.title,
-      authorId: request.authorId,
+      search: processedRequest.title,
+      authorId: processedRequest.authorId,
     })
 
     if (existingRecipes.recipes.length > 0) {
@@ -44,12 +48,12 @@ export class CreateRecipeUseCase {
     }
 
     // Criar a receita
-    const recipe = await this.recipeRepository.create(request)
+    const recipe = await this.recipeRepository.create(processedRequest)
 
     // Buscar a receita criada com todos os relacionamentos para converter para DTO
     const createdRecipe = await this.recipeRepository.findByIdWithRelations(
       recipe.id,
-      request.authorId,
+      processedRequest.authorId,
     )
     if (!createdRecipe) {
       throw new Error('Erro ao buscar receita criada')

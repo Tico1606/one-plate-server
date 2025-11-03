@@ -22,14 +22,6 @@ export class CreateIngredientUseCase {
       throw new ValidationError('Nome do ingrediente é obrigatório')
     }
 
-    // Verificar se já existe um ingrediente com esse nome
-    const existingIngredient = await this.ingredientRepository.findByName(
-      request.name.trim(),
-    )
-    if (existingIngredient) {
-      throw new ValidationError('Já existe um ingrediente com esse nome')
-    }
-
     const ingredient = await this.ingredientRepository.create({
       name: request.name.trim(),
       description: request.description?.trim() || undefined,
