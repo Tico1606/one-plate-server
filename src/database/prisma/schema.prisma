@@ -34,18 +34,15 @@ enum MealType {
   SNACK
 }
 
-// =================================================================
-// Modelo User (sincronizado com Supabase Auth)
-// =================================================================
-
 model User {
-  id        String   @id
-  email     String   @unique
-  name      String?
-  photoUrl  String?
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id
+  email       String   @unique
+  name        String?  @default("Usuário")
+  description String?
+  photoUrl    String?
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // --- Relações ---
   recipes           Recipe[]           @relation("RecipeAuthor")
@@ -77,10 +74,10 @@ model Recipe {
   source     String?
 
   // Nutrição
-  calories     Int? // Calorias por porção
-  proteinGrams Float? // Proteína em gramas
-  carbGrams    Float? // Carboidratos em gramas
-  fatGrams     Float? // Gordura em gramas
+  calories     String? // Calorias por porção (pode ser número ou "-")
+  proteinGrams String? // Proteína em gramas (pode ser número ou "-")
+  carbGrams    String? // Carboidratos em gramas (pode ser número ou "-")
+  fatGrams     String? // Gordura em gramas (pode ser número ou "-")
 
   // Publicação Simplificada
   status      RecipeStatus @default(DRAFT)
@@ -147,7 +144,7 @@ model RecipeCategory {
 
 model Ingredient {
   id               String             @id @default(cuid())
-  name             String             @unique
+  name             String
   description      String?
   imageUrl         String?
   recipes          RecipeIngredient[]
@@ -207,7 +204,7 @@ model RecipeView {
 
 model ShoppingList {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @unique
   title     String   @default("Minha Lista de Compras")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -217,14 +214,16 @@ model ShoppingList {
 }
 
 model ShoppingListItem {
-  id           String  @id @default(cuid())
+  id           String   @id @default(cuid())
   listId       String
   ingredientId String?
   recipeId     String?
   customText   String?
   amount       Float?
   unit         String?
-  isChecked    Boolean @default(false)
+  isChecked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   list       ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
   ingredient Ingredient?  @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
