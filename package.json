@@ -6,14 +6,15 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node build/server.js",
+    "build": "bun build src/server.ts --outdir build --target node",
     "generate": "npx prisma generate",
     "migrate": "npx prisma migrate dev",
+    "migrate:d": "npx prisma migrate deploy",
     "seed": "tsx src/database/seed.ts",
     "test": "vitest run --dir src/use-cases",
     "test:watch": "vitest --dir src/use-cases",
     "test:ui": "vitest --ui",
-    "generate-vapid-keys": "node scripts/generate-vapid-keys.js",
-    "debug-notifications": "node scripts/debug-notifications.js"
+    "debug-notifications": "tsx scripts/debug-notifications.ts"
   },
   "author": "",
   "license": "ISC",
@@ -33,15 +34,14 @@
     "@fastify/multipart": "9.2.1",
     "@prisma/client": "6.16.2",
     "@types/uuid": "10.0.0",
-    "@types/web-push": "3.6.4",
     "cloudinary": "2.7.0",
     "dayjs": "1.11.13",
     "dotenv": "16.6.0",
+    "expo-server-sdk": "4.0.0",
     "fastify": "5.4.0",
     "fastify-type-provider-zod": "4.0.0",
     "prisma": "6.10.1",
     "uuid": "13.0.0",
-    "web-push": "3.6.7",
     "zod": "3.25.67"
   },
   "prisma": {
