@@ -155,7 +155,7 @@ function normalizeRecipePhotos(
     body.photos = []
   }
 
-  if (Object.prototype.hasOwnProperty.call(body, 'images')) {
+  if (Object.hasOwn(body, 'images')) {
     delete body.images
   }
 }
