@@ -25,7 +25,7 @@ export class PrismaIngredientRepository
   }
 
   async findByName(name: string): Promise<BaseIngredient | null> {
-    const ingredient = await this.prisma.ingredient.findUnique({
+    const ingredient = await this.prisma.ingredient.findFirst({
       where: { name },
     })
 

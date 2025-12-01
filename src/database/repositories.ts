@@ -3,6 +3,7 @@ import {
   PrismaCategoryRepository,
   PrismaFavoriteRepository,
   PrismaIngredientRepository,
+  PrismaNotificationRepository,
   PrismaPushSubscriptionRepository,
   PrismaRecipeRepository,
   PrismaReviewRepository,
@@ -19,3 +20,4 @@ export const reviewRepository = new PrismaReviewRepository(prisma)
 export const shoppingListRepository = new PrismaShoppingListRepository(prisma)
 export const ingredientRepository = new PrismaIngredientRepository(prisma)
 export const pushSubscriptionRepository = new PrismaPushSubscriptionRepository()
+export const notificationRepository = new PrismaNotificationRepository(prisma)

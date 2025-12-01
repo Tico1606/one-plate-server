@@ -40,7 +40,7 @@ export class FastifyApp implements IServerApp {
         port: env.PORT,
       })
       .then(() => {
-        console.log('༼ つ ◕_◕ ༽つ HTTP Server Running')
+        console.log('HTTP server running')
       })
   }
 
@@ -55,7 +55,7 @@ export class FastifyApp implements IServerApp {
 
   private registerCors() {
     this.app.register(fastifyCors, {
-      origin: env.NODE_ENV === 'prod' ? env.FRONTEND_DOMAIN : '*',
+      origin: env.NODE_ENV === 'prod' ? '*' : '*',
     })
   }
 
@@ -97,7 +97,7 @@ export class FastifyApp implements IServerApp {
     this.app.setErrorHandler((error, _, reply) => {
       if (error instanceof ZodError) {
         return reply.status(HTTP_STATUS_CODE.badRequest).send({
-          message: 'Erro de validação.',
+          message: 'Erro de validacao.',
           issues: error.format(),
         })
       }

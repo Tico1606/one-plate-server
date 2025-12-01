@@ -10,17 +10,18 @@ export class PrismaPushSubscriptionRepository implements IPushSubscriptionReposi
     const subscription = await prisma.pushSubscription.create({
       data: {
         userId: data.userId,
-        endpoint: data.endpoint,
-        keys: data.keys,
+        expoPushToken: data.expoPushToken,
+        deviceInfo: data.deviceInfo ?? undefined,
       },
     })
 
     return {
       id: subscription.id,
       userId: subscription.userId,
-      endpoint: subscription.endpoint,
-      keys: subscription.keys as { p256dh: string; auth: string },
+      expoPushToken: subscription.expoPushToken,
+      deviceInfo: subscription.deviceInfo as Record<string, unknown> | null,
       createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt,
     }
   }
 
@@ -32,15 +33,16 @@ export class PrismaPushSubscriptionRepository implements IPushSubscriptionReposi
     return subscriptions.map((subscription) => ({
       id: subscription.id,
       userId: subscription.userId,
-      endpoint: subscription.endpoint,
-      keys: subscription.keys as { p256dh: string; auth: string },
+      expoPushToken: subscription.expoPushToken,
+      deviceInfo: subscription.deviceInfo as Record<string, unknown> | null,
       createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt,
     }))
   }
 
-  async findByEndpoint(endpoint: string): Promise<PushSubscriptionData | null> {
+  async findByToken(token: string): Promise<PushSubscriptionData | null> {
     const subscription = await prisma.pushSubscription.findUnique({
-      where: { endpoint },
+      where: { expoPushToken: token },
     })
 
     if (!subscription) return null
@@ -48,9 +50,10 @@ export class PrismaPushSubscriptionRepository implements IPushSubscriptionReposi
     return {
       id: subscription.id,
       userId: subscription.userId,
-      endpoint: subscription.endpoint,
-      keys: subscription.keys as { p256dh: string; auth: string },
+      expoPushToken: subscription.expoPushToken,
+      deviceInfo: subscription.deviceInfo as Record<string, unknown> | null,
       createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt,
     }
   }
 
@@ -60,9 +63,16 @@ export class PrismaPushSubscriptionRepository implements IPushSubscriptionReposi
     })
   }
 
-  async deleteByEndpoint(endpoint: string): Promise<void> {
+  async deleteByToken(token: string): Promise<void> {
     await prisma.pushSubscription.delete({
-      where: { endpoint },
+      where: { expoPushToken: token },
     })
+  }
+
+  async deleteByUserId(userId: string): Promise<number> {
+    const result = await prisma.pushSubscription.deleteMany({
+      where: { userId },
+    })
+    return result.count
   }
 }

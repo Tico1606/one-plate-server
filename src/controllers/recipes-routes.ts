@@ -5,6 +5,7 @@ import { getAuthMiddleware, getOptionalAuthMiddleware } from '@/middleware/dev-a
 import {
   CreateRecipeUseCase,
   DeleteRecipeUseCase,
+  GenerateRecipePdfUseCase,
   GetRecipeByIdUseCase,
   ListRecipesUseCase,
   PublishRecipeUseCase,
@@ -12,9 +13,61 @@ import {
   UpdateRecipeUseCase,
 } from '@/use-cases/recipes/index.ts'
 
-// Schemas de validação
+// Schemas de validacao
+const recipePhotoSchema = z.object({
+  url: z.string().url(),
+  order: z.coerce.number().int().min(0).default(0),
+})
+
+const recipeStepSchema = z.object({
+  order: z.coerce.number().int().min(0),
+  description: z.string().min(1, 'Descricao do passo e obrigatoria'),
+  durationSec: z.coerce.number().int().min(0).optional(),
+})
+
+const recipeIngredientSchema = z.object({
+  ingredientId: z.string(),
+  amount: z.coerce.number().min(0).optional(),
+  unit: z.string().optional(),
+  note: z.string().optional(),
+  group: z.string().optional(),
+})
+
+const imageUrlsSchema = z.preprocess(
+  (val) => {
+    if (val === undefined || val === null) {
+      return undefined
+    }
+
+    if (Array.isArray(val)) {
+      return val
+    }
+
+    if (typeof val === 'string') {
+      const trimmed = val.trim()
+      if (trimmed.length === 0) {
+        return []
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+      } catch {
+        // nao e JSON, tratar como URL unica
+      }
+
+      return [trimmed]
+    }
+
+    return val
+  },
+  z.array(z.string().url()).optional(),
+)
+
 const createRecipeSchema = z.object({
-  title: z.string().min(1, 'Título é obrigatório'),
+  title: z.string().min(1, 'Titulo e obrigatorio'),
   description: z.string().nullable().optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).default('MEDIUM'),
   prepTime: z.number().int().min(0),
@@ -37,39 +90,75 @@ const createRecipeSchema = z.object({
     .union([z.number().min(0), z.literal('-'), z.string().min(1)])
     .nullable()
     .optional(),
-  photos: z
-    .array(
-      z.object({
-        url: z.string().url(),
-        order: z.coerce.number().int().min(0).default(0),
-      }),
-    )
-    .default([]),
-  steps: z
-    .array(
-      z.object({
-        order: z.coerce.number().int().min(0),
-        description: z.string().min(1, 'Descrição do passo é obrigatória'),
-        durationSec: z.coerce.number().int().min(0).optional(),
-      }),
-    )
-    .min(1, 'Pelo menos um passo é obrigatório'),
+  photos: z.array(recipePhotoSchema).optional(),
+  images: imageUrlsSchema,
+  steps: z.array(recipeStepSchema).min(1, 'Pelo menos um passo e obrigatorio'),
   ingredients: z
-    .array(
-      z.object({
-        ingredientId: z.string(),
-        amount: z.coerce.number().min(0).optional(),
-        unit: z.string().optional(),
-        note: z.string().optional(),
-        group: z.string().optional(),
-      }),
-    )
-    .min(1, 'Pelo menos um ingrediente é obrigatório'),
+    .array(recipeIngredientSchema)
+    .min(1, 'Pelo menos um ingrediente e obrigatorio'),
   categories: z.array(z.string()).default([]),
   status: z.enum(['DRAFT', 'PUBLISHED']).optional().default('DRAFT'),
 })
 
-const updateRecipeSchema = createRecipeSchema.partial()
+const updateRecipeSchema = z.object({
+  title: z.string().min(1, 'Titulo e obrigatorio').optional(),
+  description: z.string().nullable().optional(),
+  difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
+  prepTime: z.number().int().min(0).optional(),
+  servings: z.number().int().min(1).optional(),
+  videoUrl: z.string().url().nullable().optional(),
+  source: z.string().nullable().optional(),
+  calories: z
+    .union([z.number().int().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  proteinGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  carbGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  fatGrams: z
+    .union([z.number().min(0), z.literal('-'), z.string().min(1)])
+    .nullable()
+    .optional(),
+  photos: z.array(recipePhotoSchema).optional(),
+  images: imageUrlsSchema,
+  steps: z.array(recipeStepSchema).optional(),
+  ingredients: z.array(recipeIngredientSchema).optional(),
+  categories: z.array(z.string()).optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+})
+
+function normalizeRecipePhotos(
+  body: Record<string, any> | undefined,
+  options: { ensureArray?: boolean } = {},
+) {
+  if (!body) {
+    return
+  }
+
+  if (Array.isArray(body.images)) {
+    body.photos = body.images.map((url: string, index: number) => ({
+      url,
+      order: index,
+    }))
+  } else if (Array.isArray(body.photos)) {
+    body.photos = body.photos.map((photo: any, index: number) => ({
+      url: photo.url,
+      order:
+        typeof photo.order === 'number' && Number.isFinite(photo.order) ? photo.order : index,
+    }))
+  } else if (options.ensureArray) {
+    body.photos = []
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'images')) {
+    delete body.images
+  }
+}
 
 const listRecipesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -175,6 +264,34 @@ export async function recipesRoutes(fastify: FastifyInstance) {
     },
   )
 
+  fastify.get(
+    '/recipes/:id/pdf',
+    {
+      schema: {
+        params: z.object({
+          id: z.string(),
+        }),
+      },
+      preHandler: [getOptionalAuthMiddleware()],
+    },
+    async (request, reply) => {
+      const { id } = request.params as { id: string }
+      const useCase = new GenerateRecipePdfUseCase(recipeRepository)
+
+      const { buffer, filename } = await useCase.execute({
+        recipeId: id,
+        requesterId: request.user?.id,
+        requesterRole: request.user?.role,
+      })
+
+      reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+
+      return reply.send(buffer)
+    },
+  )
+
   // Criar receita (autenticado)
   fastify.post(
     '/recipes',
@@ -190,8 +307,11 @@ export async function recipesRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ message: 'Usuário não autenticado' })
       }
 
+      const body = request.body as any
+      normalizeRecipePhotos(body, { ensureArray: true })
+
       const result = await useCase.execute({
-        ...(request.body as any),
+        ...body,
         authorId: request.user.id,
       })
 
@@ -218,11 +338,14 @@ export async function recipesRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ message: 'Usuário não autenticado' })
       }
 
+      const body = request.body as any
+      normalizeRecipePhotos(body)
+
       const result = await useCase.execute({
         recipeId: id,
         requesterId: request.user.id,
         requesterRole: request.user.role,
-        ...(request.body as any),
+        ...body,
       })
 
       return reply.send(result)

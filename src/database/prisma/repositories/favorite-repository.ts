@@ -49,6 +49,8 @@ export class PrismaFavoriteRepository
                   user: true,
                 },
               },
+              favorites: true,
+              views: true,
               _count: {
                 select: {
                   reviews: true,
@@ -105,6 +107,8 @@ export class PrismaFavoriteRepository
                   user: true,
                 },
               },
+              favorites: true,
+              views: true,
               _count: {
                 select: {
                   reviews: true,

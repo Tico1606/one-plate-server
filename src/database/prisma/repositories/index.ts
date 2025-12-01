@@ -1,6 +1,7 @@
 export { PrismaCategoryRepository } from './category-repository.ts'
 export { PrismaFavoriteRepository } from './favorite-repository.ts'
 export { PrismaIngredientRepository } from './ingredient-repository.ts'
+export { PrismaNotificationRepository } from './notification-repository.ts'
 export { PrismaRepository } from './prisma-repository.ts'
 export { PrismaPushSubscriptionRepository } from './push-subscription-repository.ts'
 export { PrismaRecipeRepository } from './recipe-repository.ts'
