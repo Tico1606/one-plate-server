@@ -1,4 +1,4 @@
-import { pushSubscriptionRepository } from '@/database/repositories.ts'
+import { notificationRepository, pushSubscriptionRepository } from '@/database/repositories.ts'
 import { ConflictError, ValidationError } from '@/errors/index.ts'
 import type {
   FavoriteRepository,
@@ -25,23 +25,23 @@ export class CreateFavoriteUseCase {
   ) {}
 
   async execute(request: CreateFavoriteRequest): Promise<CreateFavoriteResponse> {
-    // Validações básicas
+    // Validacoes basicas
     if (!request.userId) {
-      throw new ValidationError('ID do usuário é obrigatório')
+      throw new ValidationError('ID do usuario e obrigatorio')
     }
 
     if (!request.recipeId) {
-      throw new ValidationError('ID da receita é obrigatório')
+      throw new ValidationError('ID da receita e obrigatorio')
     }
 
-    // Verificar se o favorito já existe
+    // Verificar se o favorito ja existe
     const existingFavorite = await this.favoriteRepository.findOne(
       request.userId,
       request.recipeId,
     )
 
     if (existingFavorite) {
-      throw new ConflictError('Receita já está nos favoritos')
+      throw new ConflictError('Receita ja esta nos favoritos')
     }
 
     // Criar o favorito
@@ -50,71 +50,76 @@ export class CreateFavoriteUseCase {
       recipeId: request.recipeId,
     })
 
-    // Enviar notificação para o autor da receita
-    console.log('🔔 [NOTIFICATION] Iniciando processo de notificação para favorito')
-    console.log('🔔 [NOTIFICATION] RecipeId:', request.recipeId)
-    console.log('🔔 [NOTIFICATION] UserId (quem favoritou):', request.userId)
+    // Enviar notificacao para o autor da receita
+    console.log('[NOTIFICATION] Iniciando processo de notificacao para favorito')
+    console.log('[NOTIFICATION] RecipeId:', request.recipeId)
+    console.log('[NOTIFICATION] UserId (quem favoritou):', request.userId)
 
     try {
       const recipe = await this.recipeRepository.findById(request.recipeId)
-      console.log('🔔 [NOTIFICATION] Receita encontrada:', recipe ? 'Sim' : 'Não')
+      console.log('[NOTIFICATION] Receita encontrada:', recipe ? 'Sim' : 'Nao')
 
       if (recipe) {
-        console.log('🔔 [NOTIFICATION] AuthorId da receita:', recipe.authorId)
-        console.log(
-          '🔔 [NOTIFICATION] É o próprio autor?',
-          recipe.authorId === request.userId,
-        )
+        console.log('[NOTIFICATION] AuthorId da receita:', recipe.authorId)
+        console.log('[NOTIFICATION] E o proprio autor?', recipe.authorId === request.userId)
       }
 
       if (recipe && recipe.authorId !== request.userId) {
-        console.log('🔔 [NOTIFICATION] Buscando dados de quem favoritou...')
+        console.log('[NOTIFICATION] Buscando dados de quem favoritou...')
         const favoriter = await this.userRepository.findById(request.userId)
-        console.log('🔔 [NOTIFICATION] Usuário encontrado:', favoriter ? 'Sim' : 'Não')
-        console.log('🔔 [NOTIFICATION] Nome do usuário:', favoriter?.name || 'Usuário')
+        console.log('[NOTIFICATION] Usuario encontrado:', favoriter ? 'Sim' : 'Nao')
+        console.log('[NOTIFICATION] Nome do usuario:', favoriter?.name || 'Usuario')
 
         const notificationService = NotificationService.getInstance()
-        console.log('🔔 [NOTIFICATION] NotificationService obtido')
+        console.log('[NOTIFICATION] NotificationService obtido')
 
         const payload = notificationService.createRecipeFavoriteNotification(
+          recipe.id,
           recipe.title,
-          favoriter?.name || 'Usuário',
+          favoriter?.name || 'Usuario',
         )
-        console.log('🔔 [NOTIFICATION] Payload criado:', JSON.stringify(payload, null, 2))
+        console.log('[NOTIFICATION] Payload criado:', JSON.stringify(payload, null, 2))
 
-        console.log('🔔 [NOTIFICATION] Buscando subscriptions do autor...')
+        await notificationRepository.create({
+          userId: recipe.authorId,
+          type: 'RECIPE_FAVORITE',
+          title: payload.title,
+          body: payload.body,
+          data: {
+            ...(payload.data || {}),
+            recipeId: recipe.id,
+            favoritedById: favoriter?.id || request.userId,
+          },
+        })
+        console.log('[NOTIFICATION] Registro salvo para consulta posterior')
+
+        console.log('[NOTIFICATION] Buscando tokens push do autor...')
         const subscriptions = await pushSubscriptionRepository.findByUserId(
           recipe.authorId,
         )
-        console.log('🔔 [NOTIFICATION] Subscriptions encontradas:', subscriptions.length)
+        console.log('[NOTIFICATION] Tokens encontrados:', subscriptions.length)
 
         if (subscriptions.length === 0) {
-          console.log('⚠️ [NOTIFICATION] Nenhuma subscription encontrada para o autor!')
-          console.log(
-            '💡 [NOTIFICATION] O autor precisa registrar uma push subscription primeiro',
-          )
+          console.log('[NOTIFICATION] Nenhum token encontrado para o autor!')
+          console.log('[NOTIFICATION] O autor precisa registrar um Expo push token primeiro')
         } else {
-          console.log('🔔 [NOTIFICATION] Enviando notificação...')
+          console.log('[NOTIFICATION] Enviando notificacao...')
           await notificationService.sendNotificationToUser(
             recipe.authorId,
             payload,
             async (userId) => {
               const subscriptions = await pushSubscriptionRepository.findByUserId(userId)
-              return subscriptions.map((sub) => ({
-                endpoint: sub.endpoint,
-                keys: sub.keys,
-              }))
+              return subscriptions.map((sub) => sub.expoPushToken)
             },
           )
-          console.log('✅ [NOTIFICATION] Notificação enviada com sucesso!')
+          console.log('[NOTIFICATION] Notificacao enviada com sucesso!')
         }
       } else {
-        console.log('ℹ️ [NOTIFICATION] Não enviando notificação - é o próprio autor')
+        console.log('[NOTIFICATION] Nao enviando notificacao - e o proprio autor')
       }
     } catch (error) {
-      // Log do erro mas não falha a operação principal
-      console.error('❌ [NOTIFICATION] Erro ao enviar notificação de favorito:', error)
-      console.error('❌ [NOTIFICATION] Stack trace:', error.stack)
+      // Log do erro mas nao falha a operacao principal
+      console.error('[NOTIFICATION] Erro ao enviar notificacao de favorito:', error)
     }
 
     return { favorite }

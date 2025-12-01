@@ -29,6 +29,19 @@ import type {
   UserDTO,
 } from './dtos.ts'
 
+function parseNullableNumber(value?: string | null): number | null | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null) {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 // ============================================================================
 // Conversores para DTOs base
 // ============================================================================
@@ -38,6 +51,7 @@ export function toUserDTO(user: BaseUser): UserDTO {
     id: user.id,
     email: user.email,
     name: user.name,
+    description: user.description,
     photoUrl: user.photoUrl,
     role: user.role,
     createdAt: user.createdAt,
@@ -164,10 +178,10 @@ export function toRecipeDTO(
     servings: recipe.servings,
     videoUrl: recipe.videoUrl,
     source: recipe.source,
-    calories: recipe.calories,
-    proteinGrams: recipe.proteinGrams,
-    carbGrams: recipe.carbGrams,
-    fatGrams: recipe.fatGrams,
+    calories: parseNullableNumber(recipe.calories),
+    proteinGrams: parseNullableNumber(recipe.proteinGrams),
+    carbGrams: parseNullableNumber(recipe.carbGrams),
+    fatGrams: parseNullableNumber(recipe.fatGrams),
     status: recipe.status,
     publishedAt: recipe.publishedAt,
     createdAt: recipe.createdAt,
@@ -207,7 +221,7 @@ export function toRecipeListItemDTO(recipe: RecipeWithRelations): RecipeListItem
     difficulty: recipe.difficulty,
     prepTime: recipe.prepTime,
     servings: recipe.servings,
-    calories: recipe.calories,
+    calories: parseNullableNumber(recipe.calories),
     status: recipe.status,
     publishedAt: recipe.publishedAt,
     createdAt: recipe.createdAt,

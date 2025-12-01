@@ -3,6 +3,7 @@ export type Role = 'USER' | 'ADMIN'
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 export type RecipeStatus = 'DRAFT' | 'PUBLISHED'
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK'
+export type NotificationType = 'RECIPE_REVIEW' | 'RECIPE_FAVORITE' | 'GENERAL'
 
 // Interfaces base das entidades
 export interface BaseUser {
@@ -88,6 +89,17 @@ export interface BaseFavorite {
   createdAt: Date
 }
 
+export interface BaseNotification {
+  id: string
+  userId: string
+  type: NotificationType
+  title: string
+  body: string
+  data?: Record<string, unknown> | null
+  readAt?: Date | null
+  createdAt: Date
+}
+
 export interface BaseRecipeView {
   id: string
   userId?: string | null
@@ -166,6 +178,7 @@ export interface ShoppingListWithRelations extends BaseShoppingList {
   user: BaseUser
   items: Array<{
     id: string
+    listId: string
     ingredientId?: string | null
     recipeId?: string | null
     customText?: string | null
@@ -175,7 +188,7 @@ export interface ShoppingListWithRelations extends BaseShoppingList {
     createdAt: Date
     updatedAt: Date
     ingredient?: BaseIngredient | null
-    recipe?: BaseRecipe | null
+    recipe?: (BaseRecipe & { photos?: BaseRecipePhoto[] }) | null
   }>
 }
 
