@@ -61,34 +61,41 @@ export class GetShoppingListByUserIdUseCase {
         title: shoppingList.title,
         createdAt: shoppingList.createdAt,
         updatedAt: shoppingList.updatedAt,
-        items: shoppingList.items.map((item) => ({
-          id: item.id,
-          listId: item.listId,
-          ingredientId: item.ingredientId,
-          recipeId: item.recipeId,
-          customText: item.customText,
-          amount: item.amount,
-          unit: item.unit,
-          isChecked: item.isChecked,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          ingredient: item.ingredient
-            ? {
-                id: item.ingredient.id,
-                name: item.ingredient.name,
-                description: item.ingredient.description,
-                imageUrl: item.ingredient.imageUrl,
-              }
-            : null,
-          recipe: item.recipe
-            ? {
-                id: item.recipe.id,
-                title: item.recipe.title,
-                description: item.recipe.description,
-                imageUrl: item.recipe.imageUrl,
-              }
-            : null,
-        })),
+        items: shoppingList.items.map((item) => {
+          const imageUrl =
+            item.recipe?.photos && item.recipe.photos.length > 0
+              ? item.recipe.photos[0]?.url || null
+              : null
+
+          return {
+            id: item.id,
+            listId: item.listId,
+            ingredientId: item.ingredientId,
+            recipeId: item.recipeId,
+            customText: item.customText,
+            amount: item.amount,
+            unit: item.unit,
+            isChecked: item.isChecked,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            ingredient: item.ingredient
+              ? {
+                  id: item.ingredient.id,
+                  name: item.ingredient.name,
+                  description: item.ingredient.description,
+                  imageUrl: item.ingredient.imageUrl,
+                }
+              : null,
+            recipe: item.recipe
+              ? {
+                  id: item.recipe.id,
+                  title: item.recipe.title,
+                  description: item.recipe.description,
+                  imageUrl,
+                }
+              : null,
+          }
+        }),
       },
     }
   }

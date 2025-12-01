@@ -39,7 +39,13 @@ export class PrismaShoppingListRepository
         items: {
           include: {
             ingredient: true,
-            recipe: true,
+            recipe: {
+              include: {
+                photos: {
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -57,7 +63,13 @@ export class PrismaShoppingListRepository
           items: {
             include: {
               ingredient: true,
-              recipe: true,
+              recipe: {
+                include: {
+                  photos: {
+                    orderBy: { order: 'asc' },
+                  },
+                },
+              },
             },
             orderBy: { createdAt: 'asc' },
           },

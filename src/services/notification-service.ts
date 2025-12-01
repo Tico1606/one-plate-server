@@ -1,28 +1,22 @@
-import webpush from 'web-push'
+import { Expo } from 'expo-server-sdk'
 import { env } from '@/constants/index.ts'
 
 export interface PushNotificationPayload {
   title: string
   body: string
-  icon?: string
-  badge?: string
-  data?: Record<string, any>
-}
-
-export interface PushSubscriptionData {
-  endpoint: string
-  keys: {
-    p256dh: string
-    auth: string
-  }
+  data?: Record<string, unknown>
+  sound?: 'default' | null
+  subtitle?: string
 }
 
 export class NotificationService {
   private static instance: NotificationService
-  private isInitialized = false
+  private expo: Expo
 
   private constructor() {
-    this.initialize()
+    this.expo = new Expo({
+      accessToken: env.EXPO_ACCESS_TOKEN || undefined,
+    })
   }
 
   public static getInstance(): NotificationService {
@@ -32,66 +26,81 @@ export class NotificationService {
     return NotificationService.instance
   }
 
-  private initialize() {
-    if (this.isInitialized) return
-
-    try {
-      webpush.setVapidDetails(
-        'mailto:admin@oneplate.com',
-        env.VAPID_PUBLIC_KEY,
-        env.VAPID_PRIVATE_KEY,
-      )
-      this.isInitialized = true
-    } catch (error) {
-      console.error('Failed to initialize VAPID keys:', error)
-      throw error
+  private buildMessage(token: string, payload: PushNotificationPayload) {
+    return {
+      to: token,
+      title: payload.title,
+      body: payload.body,
+      sound: payload.sound ?? 'default',
+      subtitle: payload.subtitle,
+      data: payload.data ?? {},
     }
   }
 
-  public async sendNotification(
-    subscription: PushSubscriptionData,
+  public async sendNotificationToTokens(
+    tokens: string[],
     payload: PushNotificationPayload,
   ): Promise<void> {
-    try {
-      const pushSubscription = {
-        endpoint: subscription.endpoint,
-        keys: subscription.keys,
-      }
+    const validTokens = tokens.filter((token) => Expo.isExpoPushToken(token))
+    const invalidTokens = tokens.filter((token) => !Expo.isExpoPushToken(token))
 
-      const notificationPayload = JSON.stringify({
-        title: payload.title,
-        body: payload.body,
-        icon: payload.icon || '/icon-192x192.png',
-        badge: payload.badge || '/badge-72x72.png',
-        data: payload.data || {},
+    if (invalidTokens.length > 0) {
+      console.warn('[NOTIFICATION][PUSH] Tokens invalidos detectados', {
+        tokens: invalidTokens,
       })
+    }
 
-      await webpush.sendNotification(pushSubscription, notificationPayload)
-    } catch (error) {
-      console.error('Failed to send notification:', error)
-      throw error
+    if (validTokens.length === 0) {
+      console.log('[NOTIFICATION][PUSH] Nenhum token valido para enviar notificacao')
+      return
+    }
+
+    console.log('[NOTIFICATION][PUSH] Preparando envio de notificacoes', {
+      tokenCount: validTokens.length,
+      tokens: validTokens,
+      payload,
+    })
+
+    const messages = validTokens.map((token) => this.buildMessage(token, payload))
+    const chunks = this.expo.chunkPushNotifications(messages)
+
+    for (const chunk of chunks) {
+      try {
+        console.log('[NOTIFICATION][PUSH] Enviando chunk de notificacoes para Expo', {
+          chunkSize: chunk.length,
+        })
+        const tickets = await this.expo.sendPushNotificationsAsync(chunk)
+        tickets.forEach((ticket, index) => {
+          if (ticket.status === 'error') {
+            console.error('[NOTIFICATION][PUSH] Falha ao enviar notificacao', {
+              token: chunk[index]?.to,
+              details: ticket.details,
+              message: ticket.message,
+            })
+          }
+        })
+        console.log('[NOTIFICATION][PUSH] Chunk enviado para Expo com sucesso', {
+          chunkSize: chunk.length,
+        })
+      } catch (error) {
+        console.error('[NOTIFICATION][PUSH] Erro ao enviar chunk de notificacoes', error)
+      }
     }
   }
 
   public async sendNotificationToUser(
     userId: string,
     payload: PushNotificationPayload,
-    getSubscriptions: (userId: string) => Promise<PushSubscriptionData[]>,
+    getTokens: (userId: string) => Promise<string[]>,
   ): Promise<void> {
     try {
-      const subscriptions = await getSubscriptions(userId)
+      const tokens = await getTokens(userId)
+      console.log('[NOTIFICATION][PUSH] Tokens carregados', {
+        userId,
+        count: tokens.length,
+      })
 
-      const sendPromises = subscriptions.map((subscription) =>
-        this.sendNotification(subscription, payload).catch((error) => {
-          console.error(
-            `Failed to send notification to subscription ${subscription.endpoint}:`,
-            error,
-          )
-          // Don't throw here to avoid failing all notifications if one fails
-        }),
-      )
-
-      await Promise.allSettled(sendPromises)
+      await this.sendNotificationToTokens(tokens, payload)
     } catch (error) {
       console.error('Failed to send notification to user:', error)
       throw error
@@ -99,15 +108,17 @@ export class NotificationService {
   }
 
   public createRecipeReviewNotification(
+    recipeId: string,
     recipeTitle: string,
     reviewerName: string,
     rating: number,
   ): PushNotificationPayload {
     return {
-      title: 'Nova avaliação na sua receita!',
+      title: 'Nova avaliacao na sua receita!',
       body: `${reviewerName} avaliou "${recipeTitle}" com ${rating} estrelas`,
       data: {
         type: 'recipe_review',
+        recipeId,
         recipeTitle,
         reviewerName,
         rating,
@@ -116,6 +127,7 @@ export class NotificationService {
   }
 
   public createRecipeFavoriteNotification(
+    recipeId: string,
     recipeTitle: string,
     favoriterName: string,
   ): PushNotificationPayload {
@@ -124,6 +136,7 @@ export class NotificationService {
       body: `${favoriterName} favoritou sua receita "${recipeTitle}"`,
       data: {
         type: 'recipe_favorite',
+        recipeId,
         recipeTitle,
         favoriterName,
       },

@@ -22,6 +22,7 @@ declare module 'fastify' {
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   console.log('🔍 [CLERK AUTH] Iniciando middleware de autenticação')
   console.log('🔍 [CLERK AUTH] Headers:', request.headers)
+  console.log('🔍 [CLERK AUTH] Authorization token recebido:', request.headers.authorization)
 
   try {
     const user = await getClerkUser(request)
